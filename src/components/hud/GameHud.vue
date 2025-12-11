@@ -1,5 +1,9 @@
 <template>
   <div class="game-hud">
+    <FishingMinigame />
+    <ChestModal />
+    <QuestLog />
+
     <!-- Top Right Status Panel (Date, Weather, Time, Gold) -->
     <div class="hud-top-right">
       <!-- Date/Time Box -->
@@ -10,6 +14,9 @@
              <span class="season-icon">🌱</span>
              <span class="weather-icon" v-if="gameStore.gameState.weather === 'sunny'">☀️</span>
              <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'rainy'">🌧️</span>
+             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'storm'">⛈️</span>
+             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'snow'">❄️</span>
+             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'cloudy'">☁️</span>
           </div>
         </div>
         <div class="time-section">
@@ -21,6 +28,12 @@
       <div class="gold-box pixel-panel">
         <span class="gold-amount">{{ playerGold }}</span>
         <span class="gold-label">G</span>
+      </div>
+
+      <!-- Quest Button -->
+      <div class="quest-btn-container pixel-panel" @click="gameStore.isQuestLogOpen = !gameStore.isQuestLogOpen" title="任务日志">
+        <span class="quest-icon">📜</span>
+        <span class="quest-alert" v-if="gameStore.gameState.quests.some(q => !q.completed && q.currentCount >= q.count)">!</span>
       </div>
 
       <!-- Menu Button -->
@@ -65,23 +78,23 @@
         <div class="tool-slots">
           <button
             v-for="(tool, index) in tools"
-            :key="tool.id"
+            :key="index"
             class="tool-slot"
-            :class="{ active: selectedTool === tool.id }"
-            @click="selectTool(tool.id)"
-            @mouseenter="hoveredToolName = tool.name"
+            :class="{ active: tool && selectedTool === tool.id, empty: !tool }"
+            @click="tool && selectTool(tool.id)"
+            @mouseenter="tool ? hoveredToolName = tool.name : null"
             @mouseleave="hoveredToolName = ''"
           >
             <span class="slot-number">{{ getSlotKey(index) }}</span>
-            <span class="tool-icon">{{ tool.icon }}</span>
-            <span class="item-quantity" v-if="tool.quantity > 1">{{ tool.quantity }}</span>
+            <template v-if="tool">
+              <span class="tool-icon">{{ tool.icon }}</span>
+              <span class="item-quantity" v-if="tool.quantity > 1">{{ tool.quantity }}</span>
+              <!-- Capacity/Durability Bar -->
+              <div class="tool-bar-container" v-if="tool.data && tool.data.maxWater">
+                <div class="tool-bar-fill" :style="{ width: (tool.data.water / tool.data.maxWater * 100) + '%' }"></div>
+              </div>
+            </template>
           </button>
-          <!-- Empty slots to make up 12 -->
-          <button
-            v-for="i in Math.max(0, 12 - tools.length)"
-            :key="'empty-'+i"
-            class="tool-slot empty"
-          ></button>
         </div>
       </div>
     </div>
@@ -89,8 +102,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useGameStore } from '@/stores/game'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useGameStore, type InventoryItem } from '@/stores/game'
+import FishingMinigame from '@/components/hud/FishingMinigame.vue'
+import ChestModal from '@/components/ChestModal.vue'
+import QuestLog from '@/components/hud/QuestLog.vue'
 
 const gameStore = useGameStore()
 
@@ -103,7 +119,15 @@ const playerHealth = computed(() => gameStore.gameState.player.health)
 const playerMaxHealth = computed(() => gameStore.gameState.player.maxHealth)
 const selectedTool = computed(() => gameStore.selectedTool)
 
-const tools = computed(() => gameStore.gameState.inventory.slice(0, 12))
+const tools = computed(() => {
+  const inv = gameStore.gameState.inventory.slice(0, 12)
+  // Pad with nulls to ensure 12 slots
+  const padded: (InventoryItem | null)[] = [...inv]
+  while (padded.length < 12) {
+    padded.push(null)
+  }
+  return padded
+})
 
 const hoveredToolName = ref('')
 
@@ -112,12 +136,40 @@ const selectTool = (toolId: string) => {
 }
 
 const getSlotKey = (index: number) => {
-  if (index < 9) return (index + 1).toString()
   if (index === 9) return '0'
   if (index === 10) return '-'
   if (index === 11) return '='
-  return ''
+  return (index + 1).toString()
 }
+
+const handleKeydown = (e: KeyboardEvent) => {
+  const key = e.key
+  let index = -1
+  if (key === '0') index = 9
+  else if (key === '-') index = 10
+  else if (key === '=') index = 11
+  else {
+    const num = parseInt(key)
+    if (!isNaN(num) && num >= 1 && num <= 9) {
+      index = num - 1
+    }
+  }
+
+  if (index >= 0 && index < 12) {
+    const tool = tools.value[index]
+    if (tool) {
+      selectTool(tool.id)
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -213,6 +265,53 @@ const getSlotKey = (index: number) => {
   font-size: 16px;
   font-weight: bold;
   color: #5d4037;
+}
+
+.quest-btn-container {
+  width: 48px;
+  height: 48px;
+  background-color: #f1c40f;
+  border: 3px solid #f39c12;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  transition: transform 0.1s;
+  position: relative;
+}
+
+.quest-btn-container:active {
+  transform: scale(0.95);
+}
+
+.quest-icon {
+  font-size: 24px;
+}
+
+.quest-alert {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #e74c3c;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  border: 2px solid white;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .menu-btn-container {
@@ -390,6 +489,22 @@ const getSlotKey = (index: number) => {
   color: #fff;
   font-weight: bold;
   text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+.tool-bar-container {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  height: 4px;
+  background-color: #555;
+  border: 1px solid #000;
+}
+
+.tool-bar-fill {
+  height: 100%;
+  background-color: #00BFFF; /* Water Blue */
+  transition: width 0.2s;
 }
 
 .tool-slot.empty {

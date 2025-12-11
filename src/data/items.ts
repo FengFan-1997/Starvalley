@@ -1,7 +1,7 @@
 export interface ItemDefinition {
   id: string
   name: string
-  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture'
+  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture' | 'ring' | 'boots' | 'hat'
   price: number
   sellPrice?: number
   description: string
@@ -11,6 +11,7 @@ export interface ItemDefinition {
   // For seeds
   cropType?: string
   growthStages?: number
+  regrowAfterHarvest?: number // Stage to revert to after harvest (if regrowable)
   // For food
   energy?: number
   health?: number
@@ -18,6 +19,7 @@ export interface ItemDefinition {
   locations?: string[]
   weather?: string[] // 'sun', 'rain', 'wind'
   time?: string[] // 'day', 'night'
+  difficulty?: number
 }
 
 export const ITEMS: Record<string, ItemDefinition> = {
@@ -28,6 +30,10 @@ export const ITEMS: Record<string, ItemDefinition> = {
   hoe: { id: 'hoe', name: '锄头', type: 'tool', icon: '🗡️', description: '用来耕地。', price: 0, sellPrice: 0 },
   scythe: { id: 'scythe', name: '镰刀', type: 'tool', icon: '🌾', description: '用来割草。', price: 0, sellPrice: 0 },
   fishing_rod: { id: 'fishing_rod', name: '鱼竿', type: 'tool', icon: '🎣', description: '用来钓鱼。', price: 500, sellPrice: 0 },
+  milk_pail: { id: 'milk_pail', name: '挤奶桶', type: 'tool', icon: '🥛', description: '用来收集牛奶。', price: 1000, sellPrice: 0 },
+  shears: { id: 'shears', name: '大剪刀', type: 'tool', icon: '✂️', description: '用来收集羊毛。', price: 1000, sellPrice: 0 },
+  pan: { id: 'pan', name: '铜锅', type: 'tool', icon: '🥘', description: '用来从水中淘取矿石。', price: 2500, sellPrice: 0 },
+  wand: { id: 'wand', name: '回程魔杖', type: 'tool', icon: '🪄', description: '瞬间回到家门口。', price: 2000000, sellPrice: 0 },
 
   copper_pickaxe: { id: 'copper_pickaxe', name: '铜镐', type: 'tool', icon: '⛏️', description: '可以击碎大石头。', price: 2000, sellPrice: 0 },
   steel_pickaxe: { id: 'steel_pickaxe', name: '铁镐', type: 'tool', icon: '⛏️', description: '可以击碎陨石。', price: 5000, sellPrice: 0 },
@@ -38,6 +44,15 @@ export const ITEMS: Record<string, ItemDefinition> = {
   steel_axe: { id: 'steel_axe', name: '铁斧', type: 'tool', icon: '🪓', description: '可以砍原木。', price: 5000, sellPrice: 0 },
   gold_axe: { id: 'gold_axe', name: '金斧', type: 'tool', icon: '🪓', description: '强力斧头。', price: 10000, sellPrice: 0 },
   iridium_axe: { id: 'iridium_axe', name: '铱斧', type: 'tool', icon: '🪓', description: '最强的斧头。', price: 25000, sellPrice: 0 },
+
+  // --- Weapons ---
+  rusty_sword: { id: 'rusty_sword', name: '生锈的剑', type: 'weapon', icon: '🗡️', description: '一把古老的剑。', price: 0, sellPrice: 50 },
+  wooden_blade: { id: 'wooden_blade', name: '木剑', type: 'weapon', icon: '🗡️', description: '练习用的剑。', price: 250, sellPrice: 100 },
+  iron_edge: { id: 'iron_edge', name: '铁剑', type: 'weapon', icon: '🗡️', description: '普通的铁剑。', price: 500, sellPrice: 200 },
+  silver_saber: { id: 'silver_saber', name: '银军刀', type: 'weapon', icon: '🗡️', description: '闪闪发光。', price: 750, sellPrice: 300 },
+  obsidian_edge: { id: 'obsidian_edge', name: '黑曜石剑', type: 'weapon', icon: '🗡️', description: '极其锋利。', price: 0, sellPrice: 500 },
+  lava_katana: { id: 'lava_katana', name: '熔岩武士刀', type: 'weapon', icon: '🗡️', description: '在岩浆中锻造。', price: 25000, sellPrice: 1000 },
+  galaxy_sword: { id: 'galaxy_sword', name: '银河剑', type: 'weapon', icon: '⚔️', description: '它是独一无二的。', price: 0, sellPrice: 2000 },
 
   // --- Resources ---
   wood: { id: 'wood', name: '木材', type: 'resource', icon: '🪵', description: '坚固而柔韧的植物材料，用途广泛。', price: 10, sellPrice: 2 },
@@ -64,6 +79,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
   // --- Animal Products ---
   egg: { id: 'egg', name: '鸡蛋', type: 'resource', icon: '🥚', description: '普通的白鸡蛋。', price: 0, sellPrice: 50, canEat: true, energy: 25 },
   large_egg: { id: 'large_egg', name: '大鸡蛋', type: 'resource', icon: '🥚', description: '这是一个非常大的白鸡蛋！', price: 0, sellPrice: 95, canEat: true, energy: 38 },
+  brown_egg: { id: 'brown_egg', name: '棕色鸡蛋', type: 'resource', icon: '🥚', description: '普通的棕色鸡蛋。', price: 0, sellPrice: 50, canEat: true, energy: 25 },
+  large_brown_egg: { id: 'large_brown_egg', name: '大棕色鸡蛋', type: 'resource', icon: '🥚', description: '这是一个非常大的棕色鸡蛋！', price: 0, sellPrice: 95, canEat: true, energy: 38 },
   duck_egg: { id: 'duck_egg', name: '鸭蛋', type: 'resource', icon: '🥚', description: '还热着呢。', price: 0, sellPrice: 95, canEat: true, energy: 38 },
   void_egg: { id: 'void_egg', name: '虚空蛋', type: 'resource', icon: '🌑', description: '散发着黑暗能量的漆黑的蛋。', price: 0, sellPrice: 65, canEat: true, energy: 38 },
   milk: { id: 'milk', name: '牛奶', type: 'resource', icon: '🥛', description: '营养丰富。', price: 0, sellPrice: 125, canEat: true, energy: 38 },
@@ -74,7 +91,6 @@ export const ITEMS: Record<string, ItemDefinition> = {
   duck_feather: { id: 'duck_feather', name: '鸭毛', type: 'resource', icon: '🪶', description: '它是如此的五彩斑斓。', price: 0, sellPrice: 250 },
   rabbits_foot: { id: 'rabbits_foot', name: '兔子的脚', type: 'resource', icon: '🐾', description: '据说这会给你带来好运。', price: 0, sellPrice: 565 },
   truffle: { id: 'truffle', name: '松露', type: 'resource', icon: '🍄', description: '一种名贵的菌类。', price: 0, sellPrice: 625, canEat: true, energy: 13 },
-
   // --- Forage ---
   dandelion: { id: 'dandelion', name: '蒲公英', type: 'resource', icon: '🌼', description: '春天常见的野花。', price: 0, sellPrice: 40, canEat: true, energy: 25, seasons: ['spring'] },
   daffodil: { id: 'daffodil', name: '黄水仙', type: 'resource', icon: '🌼', description: '传统的春之花。', price: 0, sellPrice: 30, canEat: false, seasons: ['spring'] },
@@ -98,51 +114,159 @@ export const ITEMS: Record<string, ItemDefinition> = {
   red_mushroom: { id: 'red_mushroom', name: '红蘑菇', type: 'resource', icon: '🍄', description: '这种斑点蘑菇很辣。', price: 0, sellPrice: 75, canEat: false, energy: -50 },
   purple_mushroom: { id: 'purple_mushroom', name: '紫蘑菇', type: 'resource', icon: '🍄', description: '一种稀有的蘑菇。', price: 0, sellPrice: 250, canEat: true, energy: 125 },
   clam: { id: 'clam', name: '蛤蜊', type: 'resource', icon: '🐚', description: '一种有橡胶质感的软体动物。', price: 0, sellPrice: 50, canEat: false },
+ honey: { id: 'honey', name: '蜂蜜', type: 'resource', icon: '🍯', description: '蜜蜂生产的甜浆。', price: 0, sellPrice: 100, canEat: true, energy: 50 },
+
   coral: { id: 'coral', name: '珊瑚', type: 'resource', icon: '🪸', description: '生活在海洋里的小生物的群落。', price: 0, sellPrice: 80, canEat: false },
   sea_urchin: { id: 'sea_urchin', name: '海胆', type: 'resource', icon: '⚫', description: '一种行动缓慢带刺的生物。', price: 0, sellPrice: 160, canEat: false },
   rainbow_shell: { id: 'rainbow_shell', name: '彩虹贝壳', type: 'resource', icon: '🐚', description: '一个非常漂亮的贝壳。', price: 0, sellPrice: 300, canEat: false },
   nautilus_shell: { id: 'nautilus_shell', name: '鹦鹉螺贝壳', type: 'resource', icon: '🐚', description: '一个古老的贝壳。', price: 0, sellPrice: 120, canEat: false },
   coconut: { id: 'coconut', name: '椰子', type: 'resource', icon: '🥥', description: '椰子树的种子。', price: 0, sellPrice: 100, canEat: true, energy: 25 },
   cactus_fruit: { id: 'cactus_fruit', name: '仙人掌果子', type: 'resource', icon: '🌵', description: '这种甜美多汁的水果带刺。', price: 0, sellPrice: 75, canEat: true, energy: 75 },
+  // --- Crops (Spring) ---
+  parsnip: { id: 'parsnip', name: '防风草', type: 'crop', icon: '🥕', description: '一种在春天生长的块茎植物。', price: 0, sellPrice: 35, canEat: true, energy: 25, seasons: ['spring'] },
+  green_bean: { id: 'green_bean', name: '青豆', type: 'crop', icon: '🫘', description: '多汁的小豆子。', price: 0, sellPrice: 40, canEat: true, energy: 25, seasons: ['spring'] },
+  cauliflower: { id: 'cauliflower', name: '花椰菜', type: 'crop', icon: '🥦', description: '非常有价值，但是生长缓慢。', price: 0, sellPrice: 175, canEat: true, energy: 75, seasons: ['spring'] },
+  potato: { id: 'potato', name: '土豆', type: 'crop', icon: '🥔', description: '栽种范围很广的块茎植物。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['spring'] },
+  garlic: { id: 'garlic', name: '大蒜', type: 'crop', icon: '🧄', description: '给菜肴增加风味。', price: 0, sellPrice: 60, canEat: true, energy: 20, seasons: ['spring'] },
+  kale: { id: 'kale', name: '甘蓝', type: 'crop', icon: '🥬', description: '炒菜或做汤都很美味。', price: 0, sellPrice: 110, canEat: true, energy: 50, seasons: ['spring'] },
+  rhubarb: { id: 'rhubarb', name: '大黄', type: 'crop', icon: '🎋', description: '茎部很甜，但是叶子有毒。', price: 0, sellPrice: 220, canEat: true, energy: -1, seasons: ['spring'] },
+  strawberry: { id: 'strawberry', name: '草莓', type: 'crop', icon: '🍓', description: '甜美多汁，深受喜爱。', price: 0, sellPrice: 120, canEat: true, energy: 50, seasons: ['spring'] },
+  tulip: { id: 'tulip', name: '郁金香', type: 'crop', icon: '🌷', description: '最受欢迎的春天花朵。', price: 0, sellPrice: 30, canEat: false, seasons: ['spring'] },
+  blue_jazz: { id: 'blue_jazz', name: '蓝爵', type: 'crop', icon: '🌸', description: '这种花呈球状，以便引来更多的蝴蝶。', price: 0, sellPrice: 50, canEat: false, seasons: ['spring'] },
+  coffee_bean: { id: 'coffee_bean', name: '咖啡豆', type: 'seed', icon: '🫘', description: '可以在夏天种植，或者放入小桶酿造咖啡。', price: 2500, sellPrice: 15, cropType: 'coffee_bean', growthStages: 10, regrowAfterHarvest: 8, seasons: ['spring', 'summer'] },
+
+  // --- Crops (Summer) ---
+  tomato: { id: 'tomato', name: '番茄', type: 'crop', icon: '🍅', description: '口感丰富，略带酸味。', price: 0, sellPrice: 60, canEat: true, energy: 20, seasons: ['summer'] },
+  corn: { id: 'corn', name: '玉米', type: 'crop', icon: '🌽', description: '最常见的谷物之一。', price: 0, sellPrice: 50, canEat: true, energy: 25, seasons: ['summer', 'autumn'] },
+  hops: { id: 'hops', name: '啤酒花', type: 'crop', icon: '🌿', description: '带苦味刺鼻的花朵，用于酿酒。', price: 0, sellPrice: 25, canEat: true, energy: 45, seasons: ['summer'] },
+  hot_pepper: { id: 'hot_pepper', name: '辣椒', type: 'crop', icon: '🌶️', description: '超级辣，带一点甜味。', price: 0, sellPrice: 40, canEat: true, energy: 13, seasons: ['summer'] },
+  melon: { id: 'melon', name: '甜瓜', type: 'crop', icon: '🍈', description: '凉爽香甜的夏日食品。', price: 0, sellPrice: 250, canEat: true, energy: 113, seasons: ['summer'] },
+  blueberry: { id: 'blueberry', name: '蓝莓', type: 'crop', icon: '🫐', description: '据说这种浆果的外皮有极其丰富的营养。', price: 0, sellPrice: 50, canEat: true, energy: 25, seasons: ['summer'] },
+  radish: { id: 'radish', name: '萝卜', type: 'crop', icon: '🥕', description: '新鲜清脆的块根蔬菜。', price: 0, sellPrice: 90, canEat: true, energy: 45, seasons: ['summer'] },
+  wheat: { id: 'wheat', name: '小麦', type: 'crop', icon: '🌾', description: '被广泛种植的谷物之一。', price: 0, sellPrice: 25, canEat: false, seasons: ['summer', 'autumn'] },
+  red_cabbage: { id: 'red_cabbage', name: '红叶卷心菜', type: 'crop', icon: '🥬', description: '常用于做沙拉和卷心菜丝。', price: 0, sellPrice: 260, canEat: true, energy: 75, seasons: ['summer'] },
+  starfruit: { id: 'starfruit', name: '杨桃', type: 'crop', icon: '⭐', description: '极其多汁的水果。', price: 0, sellPrice: 750, canEat: true, energy: 125, seasons: ['summer'] },
+  poppy: { id: 'poppy', name: '罂粟', type: 'crop', icon: '🌺', description: '颜色鲜艳，有镇静效果。', price: 0, sellPrice: 140, canEat: false, seasons: ['summer'] },
+  summer_spangle: { id: 'summer_spangle', name: '亮片', type: 'crop', icon: '🌸', description: '一种热带花卉。', price: 0, sellPrice: 90, canEat: false, seasons: ['summer'] },
+  sunflower: { id: 'sunflower', name: '向日葵', type: 'crop', icon: '🌻', description: '一直被误认为会随着太阳转动。', price: 0, sellPrice: 80, canEat: false, seasons: ['summer', 'autumn'] },
+
+  // --- Crops (Autumn) ---
+  eggplant: { id: 'eggplant', name: '茄子', type: 'crop', icon: '🍆', description: '浓郁而又健康美味。', price: 0, sellPrice: 60, canEat: true, energy: 20, seasons: ['autumn'] },
+  pumpkin: { id: 'pumpkin', name: '南瓜', type: 'crop', icon: '🎃', description: '秋天的农作物，因为其酥脆的种子和甜美的果肉深受喜爱。', price: 0, sellPrice: 320, canEat: true, energy: 0, seasons: ['autumn'] },
+  bok_choy: { id: 'bok_choy', name: '小白菜', type: 'crop', icon: '🥬', description: '绿叶蔬菜。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['autumn'] },
+  yam: { id: 'yam', name: '山药', type: 'crop', icon: '🍠', description: '一种淀粉块茎。', price: 0, sellPrice: 160, canEat: true, energy: 45, seasons: ['autumn'] },
+  cranberry: { id: 'cranberry', name: '蔓越莓', type: 'crop', icon: '🍒', description: '这种酸甜的红色浆果是传统的冬日食品。', price: 0, sellPrice: 75, canEat: true, energy: 38, seasons: ['autumn'] },
+  beet: { id: 'beet', name: '甜菜', type: 'crop', icon: '🧅', description: '一种甜而有泥土气息的根茎蔬菜。', price: 0, sellPrice: 100, canEat: true, energy: 30, seasons: ['autumn'] },
+  amaranth: { id: 'amaranth', name: '苋菜', type: 'crop', icon: '🌿', description: '一种紫色的谷物。', price: 0, sellPrice: 150, canEat: true, energy: 50, seasons: ['autumn'] },
+  artichoke: { id: 'artichoke', name: '朝鲜蓟', type: 'crop', icon: '🥬', description: '一种蓟科植物的球茎。', price: 0, sellPrice: 160, canEat: true, energy: 30, seasons: ['autumn'] },
+  fairy_rose: { id: 'fairy_rose', name: '仙女玫瑰', type: 'crop', icon: '🌹', description: '据传这种花的甜美气味会吸引小精灵。', price: 0, sellPrice: 290, canEat: false, seasons: ['autumn'] },
+  sweet_gem_berry: { id: 'sweet_gem_berry', name: '宝石甜梅', type: 'crop', icon: '💎', description: '它简直甜得让人发指。', price: 0, sellPrice: 3000, canEat: true, energy: 0, seasons: ['autumn'] },
 
   // --- Seeds ---
   parsnip_seeds: { id: 'parsnip_seeds', name: '防风草种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 20, sellPrice: 10, cropType: 'parsnip', growthStages: 4, seasons: ['spring'] },
   potato_seeds: { id: 'potato_seeds', name: '土豆种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 50, sellPrice: 25, cropType: 'potato', growthStages: 6, seasons: ['spring'] },
   cauliflower_seeds: { id: 'cauliflower_seeds', name: '花椰菜种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 80, sellPrice: 40, cropType: 'cauliflower', growthStages: 12, seasons: ['spring'] },
-  bean_starter: { id: 'bean_starter', name: '青豆种子', type: 'seed', icon: '🌰', description: '春季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'green_bean', growthStages: 10, seasons: ['spring'] },
+  bean_starter: { id: 'bean_starter', name: '青豆种子', type: 'seed', icon: '🌰', description: '春季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'green_bean', growthStages: 10, regrowAfterHarvest: 7, seasons: ['spring'] },
   kale_seeds: { id: 'kale_seeds', name: '甘蓝种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 70, sellPrice: 35, cropType: 'kale', growthStages: 6, seasons: ['spring'] },
   garlic_seeds: { id: 'garlic_seeds', name: '大蒜种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 40, sellPrice: 20, cropType: 'garlic', growthStages: 4, seasons: ['spring'] },
   tulip_bulb: { id: 'tulip_bulb', name: '郁金香球茎', type: 'seed', icon: '🌰', description: '春季花卉。', price: 20, sellPrice: 10, cropType: 'tulip', growthStages: 6, seasons: ['spring'] },
   jazz_seeds: { id: 'jazz_seeds', name: '爵士种子', type: 'seed', icon: '🌰', description: '春季花卉。', price: 30, sellPrice: 15, cropType: 'blue_jazz', growthStages: 7, seasons: ['spring'] },
-  strawberry_seeds: { id: 'strawberry_seeds', name: '草莓种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 100, sellPrice: 50, cropType: 'strawberry', growthStages: 8, seasons: ['spring'] },
+  strawberry_seeds: { id: 'strawberry_seeds', name: '草莓种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 100, sellPrice: 50, cropType: 'strawberry', growthStages: 8, regrowAfterHarvest: 4, seasons: ['spring'] },
+  rhubarb_seeds: { id: 'rhubarb_seeds', name: '大黄种子', type: 'seed', icon: '🌰', description: '春季作物。', price: 100, sellPrice: 50, cropType: 'rhubarb', growthStages: 13, seasons: ['spring'] },
 
   wheat_seeds: { id: 'wheat_seeds', name: '小麦种子', type: 'seed', icon: '🌰', description: '夏秋作物。', price: 10, sellPrice: 5, cropType: 'wheat', growthStages: 4, seasons: ['summer', 'autumn'] },
-  corn_seeds: { id: 'corn_seeds', name: '玉米种子', type: 'seed', icon: '🌰', description: '夏秋作物。', price: 150, sellPrice: 75, cropType: 'corn', growthStages: 14, seasons: ['summer', 'autumn'] },
-  tomato_seeds: { id: 'tomato_seeds', name: '番茄种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 50, sellPrice: 25, cropType: 'tomato', growthStages: 11, seasons: ['summer'] },
-  pepper_seeds: { id: 'pepper_seeds', name: '辣椒种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 40, sellPrice: 20, cropType: 'hot_pepper', growthStages: 5, seasons: ['summer'] },
+  corn_seeds: { id: 'corn_seeds', name: '玉米种子', type: 'seed', icon: '🌰', description: '夏秋作物。', price: 150, sellPrice: 75, cropType: 'corn', growthStages: 14, regrowAfterHarvest: 10, seasons: ['summer', 'autumn'] },
+  tomato_seeds: { id: 'tomato_seeds', name: '番茄种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 50, sellPrice: 25, cropType: 'tomato', growthStages: 11, regrowAfterHarvest: 7, seasons: ['summer'] },
+  pepper_seeds: { id: 'pepper_seeds', name: '辣椒种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 40, sellPrice: 20, cropType: 'hot_pepper', growthStages: 5, regrowAfterHarvest: 2, seasons: ['summer'] },
   melon_seeds: { id: 'melon_seeds', name: '甜瓜种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 80, sellPrice: 40, cropType: 'melon', growthStages: 12, seasons: ['summer'] },
-  blueberry_seeds: { id: 'blueberry_seeds', name: '蓝莓种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 80, sellPrice: 40, cropType: 'blueberry', growthStages: 13, seasons: ['summer'] },
+  blueberry_seeds: { id: 'blueberry_seeds', name: '蓝莓种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 80, sellPrice: 40, cropType: 'blueberry', growthStages: 13, regrowAfterHarvest: 9, seasons: ['summer'] },
   radish_seeds: { id: 'radish_seeds', name: '萝卜种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 40, sellPrice: 20, cropType: 'radish', growthStages: 6, seasons: ['summer'] },
   poppy_seeds: { id: 'poppy_seeds', name: '罂粟种子', type: 'seed', icon: '🌰', description: '夏季花卉。', price: 100, sellPrice: 50, cropType: 'poppy', growthStages: 7, seasons: ['summer'] },
   spangle_seeds: { id: 'spangle_seeds', name: '亮片种子', type: 'seed', icon: '🌰', description: '夏季花卉。', price: 50, sellPrice: 25, cropType: 'summer_spangle', growthStages: 8, seasons: ['summer'] },
-  hops_starter: { id: 'hops_starter', name: '啤酒花种子', type: 'seed', icon: '🌰', description: '夏季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'hops', growthStages: 11, seasons: ['summer'] },
+  hops_starter: { id: 'hops_starter', name: '啤酒花种子', type: 'seed', icon: '🌰', description: '夏季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'hops', growthStages: 11, regrowAfterHarvest: 10, seasons: ['summer'] },
   starfruit_seeds: { id: 'starfruit_seeds', name: '杨桃种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 400, sellPrice: 200, cropType: 'starfruit', growthStages: 13, seasons: ['summer'] },
   red_cabbage_seeds: { id: 'red_cabbage_seeds', name: '红叶卷心菜种子', type: 'seed', icon: '🌰', description: '夏季作物。', price: 100, sellPrice: 50, cropType: 'red_cabbage', growthStages: 9, seasons: ['summer'] },
 
-  eggplant_seeds: { id: 'eggplant_seeds', name: '茄子种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 20, sellPrice: 10, cropType: 'eggplant', growthStages: 5, seasons: ['autumn'] },
+  eggplant_seeds: { id: 'eggplant_seeds', name: '茄子种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 20, sellPrice: 10, cropType: 'eggplant', growthStages: 5, regrowAfterHarvest: 1, seasons: ['autumn'] },
   pumpkin_seeds: { id: 'pumpkin_seeds', name: '南瓜种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 100, sellPrice: 50, cropType: 'pumpkin', growthStages: 13, seasons: ['autumn'] },
   bok_choy_seeds: { id: 'bok_choy_seeds', name: '小白菜种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 50, sellPrice: 25, cropType: 'bok_choy', growthStages: 4, seasons: ['autumn'] },
   yam_seeds: { id: 'yam_seeds', name: '山药种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 60, sellPrice: 30, cropType: 'yam', growthStages: 10, seasons: ['autumn'] },
-  cranberry_seeds: { id: 'cranberry_seeds', name: '蔓越莓种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 240, sellPrice: 120, cropType: 'cranberry', growthStages: 7, seasons: ['autumn'] },
+  cranberry_seeds: { id: 'cranberry_seeds', name: '蔓越莓种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 240, sellPrice: 120, cropType: 'cranberry', growthStages: 7, regrowAfterHarvest: 2, seasons: ['autumn'] },
   sunflower_seeds: { id: 'sunflower_seeds', name: '向日葵种子', type: 'seed', icon: '🌰', description: '夏秋花卉。', price: 20, sellPrice: 10, cropType: 'sunflower', growthStages: 8, seasons: ['summer', 'autumn'] },
   fairy_seeds: { id: 'fairy_seeds', name: '仙女玫瑰种子', type: 'seed', icon: '🌰', description: '秋季花卉。', price: 200, sellPrice: 100, cropType: 'fairy_rose', growthStages: 12, seasons: ['autumn'] },
   amaranth_seeds: { id: 'amaranth_seeds', name: '苋菜种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 70, sellPrice: 35, cropType: 'amaranth', growthStages: 7, seasons: ['autumn'] },
-  grape_starter: { id: 'grape_starter', name: '葡萄种子', type: 'seed', icon: '🌰', description: '秋季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'grape', growthStages: 10, seasons: ['autumn'] },
+  grape_starter: { id: 'grape_starter', name: '葡萄种子', type: 'seed', icon: '🌰', description: '秋季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'grape', growthStages: 10, regrowAfterHarvest: 7, seasons: ['autumn'] },
   artichoke_seeds: { id: 'artichoke_seeds', name: '朝鲜蓟种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 30, sellPrice: 15, cropType: 'artichoke', growthStages: 8, seasons: ['autumn'] },
-
   rare_seed: { id: 'rare_seed', name: '稀有种子', type: 'seed', icon: '💎', description: '在秋天播种。稍微有一点光环。', price: 1000, sellPrice: 200, cropType: 'sweet_gem_berry', growthStages: 24, seasons: ['autumn'] },
-  ancient_seeds: { id: 'ancient_seeds', name: '上古种子', type: 'seed', icon: '🏺', description: '可以长出远古的果实。', price: 0, sellPrice: 30, cropType: 'ancient_fruit', growthStages: 28, seasons: ['spring', 'summer', 'autumn'] },
-  cactus_seeds: { id: 'cactus_seeds', name: '仙人掌种子', type: 'seed', icon: '🌵', description: '只能在室内种植。', price: 150, sellPrice: 75, cropType: 'cactus_fruit', growthStages: 12, seasons: ['spring', 'summer', 'autumn', 'winter'] },
+  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture'
+
+
+  // Artisan Items
+  coffee_bean: { id: 'coffee_bean', name: '咖啡豆', type: 'seed', icon: '🫘', description: '可以在夏天种植，或者放入小桶酿造咖啡。', price: 2500, sellPrice: 15, cropType: 'coffee_bean', growthStages: 10, regrowAfterHarvest: 8, seasons: ['spring', 'summer'] },
+  honey: { id: 'honey', name: '蜂蜜', type: 'resource', icon: '🍯', description: '蜜蜂生产的甜浆。', price: 0, sellPrice: 100, canEat: true, energy: 50 },
+
+  ancient_seeds: { id: 'ancient_seeds', name: '上古种子', type: 'seed', icon: '🏺', description: '可以长出远古的果实。', price: 0, sellPrice: 30, cropType: 'ancient_fruit', growthStages: 28, regrowAfterHarvest: 21, seasons: ['spring', 'summer', 'autumn'] },
+
+  // --- Special Seeds ---
+  spring_seeds: { id: 'spring_seeds', name: '春季种子', type: 'seed', icon: '🌱', description: '各种春季野生种子的集合。', price: 35, sellPrice: 35, cropType: 'spring_wild', growthStages: 7, seasons: ['spring'] },
+  summer_seeds: { id: 'summer_seeds', name: '夏季种子', type: 'seed', icon: '🌱', description: '各种夏季野生种子的集合。', price: 55, sellPrice: 55, cropType: 'summer_wild', growthStages: 7, seasons: ['summer'] },
+  fall_seeds: { id: 'fall_seeds', name: '秋季种子', type: 'seed', icon: '🌱', description: '各种秋季野生种子的集合。', price: 45, sellPrice: 45, cropType: 'fall_wild', growthStages: 7, seasons: ['autumn'] },
+  winter_seeds: { id: 'winter_seeds', name: '冬季种子', type: 'seed', icon: '🌱', description: '各种冬季野生种子的集合。', price: 30, sellPrice: 30, cropType: 'winter_wild', growthStages: 7, seasons: ['winter'] },
+  mixed_seeds: { id: 'mixed_seeds', name: '混合种子', type: 'seed', icon: '🌰', description: '只有种下去才知道是什么。', price: 0, sellPrice: 0, cropType: 'mixed', growthStages: 1, seasons: ['spring', 'summer', 'autumn'] },
+  fiber_seeds: { id: 'fiber_seeds', name: '纤维种子', type: 'seed', icon: '🌱', description: '种植在任何季节。不需要浇水。', price: 0, sellPrice: 5, cropType: 'fiber', growthStages: 7, seasons: ['spring', 'summer', 'autumn', 'winter'] },
+  tea_sapling: { id: 'tea_sapling', name: '茶苗', type: 'seed', icon: '🍵', description: '需要20天才能长成茶树。', price: 0, sellPrice: 500, cropType: 'tea_bush', growthStages: 20, seasons: ['spring', 'summer', 'autumn', 'winter'] },
+
+  // --- Artifacts & Special ---
+  ancient_seed_artifact: { id: 'ancient_seed_artifact', name: '上古种子（文物）', type: 'artifact', icon: '🏺', description: '一颗古老的种子。能不能长出什么来呢？', price: 0, sellPrice: 5 },
+
+  // --- Craftables ---
+  wood_fence: { id: 'wood_fence', name: '木围栏', type: 'misc', icon: '🚧', description: '阻挡动物和怪物。', price: 0, sellPrice: 1 },
+  stone_fence: { id: 'stone_fence', name: '石围栏', type: 'misc', icon: '🪨', description: '坚固的围栏。', price: 0, sellPrice: 2 },
+  iron_fence: { id: 'iron_fence', name: '铁围栏', type: 'misc', icon: '⛓️', description: '非常耐用的围栏。', price: 0, sellPrice: 6 },
+  gate: { id: 'gate', name: '大门', type: 'misc', icon: '🚪', description: '允许通过围栏。', price: 0, sellPrice: 4 },
+  chest: { id: 'chest', name: '箱子', type: 'misc', icon: '📦', description: '用来储存物品。', price: 0, sellPrice: 0 },
+  furnace: { id: 'furnace', name: '熔炉', type: 'misc', icon: '🔥', description: '将矿石冶炼成锭。', price: 0, sellPrice: 0 },
+  scarecrow: { id: 'scarecrow', name: '稻草人', type: 'misc', icon: '☃️', description: '防止乌鸦吃掉作物。', price: 0, sellPrice: 0 },
+  seed_maker: { id: 'seed_maker', name: '种子生产器', type: 'misc', icon: '🌱', description: '从收获的作物中提取种子。', price: 0, sellPrice: 0 },
+  recycling_machine: { id: 'recycling_machine', name: '回收机', type: 'misc', icon: '♻️', description: '把垃圾变成有用的东西。', price: 0, sellPrice: 0 },
+  mayonnaise_machine: { id: 'mayonnaise_machine', name: '蛋黄酱机', type: 'misc', icon: '🥚', description: '把鸡蛋加工成蛋黄酱。', price: 0, sellPrice: 0 },
+  cheese_press: { id: 'cheese_press', name: '压酪机', type: 'misc', icon: '🧀', description: '把牛奶加工成奶酪。', price: 0, sellPrice: 0 },
+  preserves_jar: { id: 'preserves_jar', name: '罐头瓶', type: 'misc', icon: '🥫', description: '把蔬菜变成泡菜，把水果变成果酱。', price: 0, sellPrice: 0 },
+  keg: { id: 'keg', name: '小桶', type: 'misc', icon: '🍺', description: '酿造饮料。', price: 0, sellPrice: 0 },
+  bee_house: { id: 'bee_house', name: '蜂房', type: 'misc', icon: '🐝', description: '利用花朵生产蜂蜜。', price: 0, sellPrice: 0 },
+  loom: { id: 'loom', name: '织布机', type: 'misc', icon: '🧶', description: '将原毛加工成精细的布料。', price: 0, sellPrice: 0 },
+  oil_maker: { id: 'oil_maker', name: '榨油机', type: 'misc', icon: '🧴', description: '用松露制作松露油。', price: 0, sellPrice: 0 },
+  sprinkler: { id: 'sprinkler', name: '洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的4个地块浇水。', price: 0, sellPrice: 0 },
+  quality_sprinkler: { id: 'quality_sprinkler', name: '优质洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的8个地块浇水。', price: 0, sellPrice: 0 },
+  iridium_sprinkler: { id: 'iridium_sprinkler', name: '铱制洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的24个地块浇水。', price: 0, sellPrice: 0 },
+  tapper: { id: 'tapper', name: '树液采集器', type: 'misc', icon: '🏺', description: '放置在枫树、橡树或松树上。', price: 0, sellPrice: 0 },
+  lightning_rod: { id: 'lightning_rod', name: '避雷针', type: 'misc', icon: '⚡', description: '从雷暴中收集能量。', price: 0, sellPrice: 0 },
+  crystalarium: { id: 'crystalarium', name: '宝石复制机', type: 'misc', icon: '💎', description: '放入宝石，它会无限复制。', price: 0, sellPrice: 0 },
+  worm_bin: { id: 'worm_bin', name: '虫饵盒', type: 'misc', icon: '🪱', description: '定期生产鱼饵。', price: 0, sellPrice: 0 },
+  mini_jukebox: { id: 'mini_jukebox', name: '迷你点唱机', type: 'misc', icon: '🎵', description: '播放你喜欢的曲子。', price: 0, sellPrice: 0 },
+  staircase: { id: 'staircase', name: '楼梯', type: 'misc', icon: '🪜', description: '用来快速下矿。', price: 0, sellPrice: 0 },
+  campfire: { id: 'campfire', name: '营火', type: 'misc', icon: '🔥', description: '提供光和热。', price: 0, sellPrice: 0 },
+
+  // --- Totems & Bombs ---
+  warp_totem_farm: { id: 'warp_totem_farm', name: '传送图腾：农场', type: 'misc', icon: '🗿', description: '直接将你传送到农场。', price: 0, sellPrice: 20 },
+  warp_totem_mountain: { id: 'warp_totem_mountain', name: '传送图腾：山岭', type: 'misc', icon: '🗿', description: '直接将你传送到山岭。', price: 0, sellPrice: 20 },
+  warp_totem_beach: { id: 'warp_totem_beach', name: '传送图腾：海滩', type: 'misc', icon: '🗿', description: '直接将你传送到海滩。', price: 0, sellPrice: 20 },
+  rain_totem: { id: 'rain_totem', name: '求雨图腾', type: 'misc', icon: '🌧️', description: '激活后，明天下雨的概率大大增加。', price: 0, sellPrice: 20 },
+  cherry_bomb: { id: 'cherry_bomb', name: '樱桃炸弹', type: 'misc', icon: '💣', description: '产生一个小爆炸。', price: 300, sellPrice: 30 },
+  bomb: { id: 'bomb', name: '炸弹', type: 'misc', icon: '💣', description: '产生爆炸。小心！', price: 600, sellPrice: 50 },
+  mega_bomb: { id: 'mega_bomb', name: '超级炸弹', type: 'misc', icon: '💣', description: '产生巨大的爆炸。极度危险！', price: 1000, sellPrice: 50 },
+
+  // --- Fertilizers ---
+  basic_fertilizer: { id: 'basic_fertilizer', name: '基础肥料', type: 'misc', icon: '💩', description: '提高土壤质量。', price: 100, sellPrice: 2 },
+  quality_fertilizer: { id: 'quality_fertilizer', name: '优质肥料', type: 'misc', icon: '💩', description: '提高土壤质量。', price: 150, sellPrice: 10 },
+  speed_gro: { id: 'speed_gro', name: '加速肥料', type: 'misc', icon: '⚡', description: '促进叶子生长。', price: 100, sellPrice: 20 },
+  deluxe_speed_gro: { id: 'deluxe_speed_gro', name: '高级加速肥料', type: 'misc', icon: '⚡', description: '促进叶子生长。', price: 150, sellPrice: 40 },
+  tree_fertilizer: { id: 'tree_fertilizer', name: '树肥', type: 'misc', icon: '🌳', description: '撒在野生树木上。', price: 0, sellPrice: 2 },
+
+  // --- Rings ---
+  glowstone_ring: { id: 'glowstone_ring', name: '辉石戒指', type: 'misc', icon: '💍', description: '发出恒定的光，并增加收集物品的磁力半径。', price: 0, sellPrice: 100 },
+  iridium_band: { id: 'iridium_band', name: '铱环', type: 'misc', icon: '💍', description: '发光，吸引物品，并增加10%的攻击伤害。', price: 0, sellPrice: 1000 },
+  cactus_seeds: { id: 'cactus_seeds', name: '仙人掌种子', type: 'seed', icon: '🌵', description: '只能在室内种植。', price: 150, sellPrice: 75, cropType: 'cactus_fruit', growthStages: 12, regrowAfterHarvest: 9, seasons: ['spring', 'summer', 'autumn', 'winter'] },
 
   acorn: { id: 'acorn', name: '橡子', type: 'seed', icon: '🌰', description: '可以种出一棵橡树。', price: 0, sellPrice: 20 },
   maple_seed: { id: 'maple_seed', name: '枫树种子', type: 'seed', icon: '🍁', description: '可以种出一棵枫树。', price: 0, sellPrice: 5 },
@@ -217,9 +341,38 @@ export const ITEMS: Record<string, ItemDefinition> = {
   solar_essence: { id: 'solar_essence', name: '太阳精华', type: 'resource', icon: '🔥', description: '发光的面部触感温热。', price: 0, sellPrice: 40 },
   void_essence: { id: 'void_essence', name: '虚空精华', type: 'resource', icon: '🌑', description: '充满了暗能量。', price: 0, sellPrice: 50 },
   bone_fragment: { id: 'bone_fragment', name: '骨头碎片', type: 'resource', icon: '🦴', description: '一小块骨头。', price: 0, sellPrice: 12 },
+  // --- Forage ---
+  dandelion: { id: 'dandelion', name: '蒲公英', type: 'resource', icon: '🌼', description: '春天常见的野花。', price: 0, sellPrice: 40, canEat: true, energy: 25, seasons: ['spring'] },
+  daffodil: { id: 'daffodil', name: '黄水仙', type: 'resource', icon: '🌼', description: '传统的春之花。', price: 0, sellPrice: 30, canEat: false, seasons: ['spring'] },
+  leek: { id: 'leek', name: '韭葱', type: 'resource', icon: '🥬', description: '美味的洋葱近亲。', price: 0, sellPrice: 60, canEat: true, energy: 40, seasons: ['spring'] },
+  wild_horseradish: { id: 'wild_horseradish', name: '野山葵', type: 'resource', icon: '🌿', description: '根部辛辣。', price: 0, sellPrice: 50, canEat: true, energy: 13, seasons: ['spring'] },
+  morel: { id: 'morel', name: '羊肚菌', type: 'resource', icon: '🍄', description: '因其独特的味道而受到追捧。', price: 0, sellPrice: 150, canEat: true, energy: 20, seasons: ['spring'] },
+  salmonberry: { id: 'salmonberry', name: '美洲大树莓', type: 'resource', icon: '🍒', description: '初夏的浆果。', price: 0, sellPrice: 5, canEat: true, energy: 25, seasons: ['spring'] },
+  spice_berry: { id: 'spice_berry', name: '香料浆果', type: 'resource', icon: '🫐', description: '充满了夏日气息。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['summer'] },
+  grape: { id: 'grape', name: '葡萄', type: 'resource', icon: '🍇', description: '一串甜美的水果。', price: 0, sellPrice: 80, canEat: true, energy: 38, seasons: ['summer'] },
+  sweet_pea: { id: 'sweet_pea', name: '香豌豆', type: 'resource', icon: '🌸', description: '夏日香气。', price: 0, sellPrice: 50, canEat: false, seasons: ['summer'] },
+  common_mushroom: { id: 'common_mushroom', name: '普通蘑菇', type: 'resource', icon: '🍄', description: '略带坚果味。', price: 0, sellPrice: 40, canEat: true, energy: 38, seasons: ['autumn'] },
+  wild_plum: { id: 'wild_plum', name: '野李子', type: 'resource', icon: '🫐', description: '酸甜可口。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['autumn'] },
+  hazelnut: { id: 'hazelnut', name: '榛子', type: 'resource', icon: '🌰', description: '巨大的榛子。', price: 0, sellPrice: 90, canEat: true, energy: 30, seasons: ['autumn'] },
+  blackberry: { id: 'blackberry', name: '黑莓', type: 'resource', icon: '🫐', description: '秋天的浆果。', price: 0, sellPrice: 20, canEat: true, energy: 25, seasons: ['autumn'] },
+  chanterelle: { id: 'chanterelle', name: '鸡油菌', type: 'resource', icon: '🍄', description: '一种美味的蘑菇，有水果味和轻微的胡椒味。', price: 0, sellPrice: 160, canEat: true, energy: 75, seasons: ['autumn'] },
+  winter_root: { id: 'winter_root', name: '冬根', type: 'resource', icon: '🥔', description: '富含淀粉的块茎。', price: 0, sellPrice: 70, canEat: true, energy: 25, seasons: ['winter'] },
+  crystal_fruit: { id: 'crystal_fruit', name: '水晶果', type: 'resource', icon: '💎', description: '精致的水果。', price: 0, sellPrice: 150, canEat: true, energy: 63, seasons: ['winter'] },
+  snow_yam: { id: 'snow_yam', name: '雪山药', type: 'resource', icon: '🍠', description: '藏在雪下。', price: 0, sellPrice: 100, canEat: true, energy: 30, seasons: ['winter'] },
+  crocus: { id: 'crocus', name: '番红花', type: 'resource', icon: '🌷', description: '冬天也能开花。', price: 0, sellPrice: 60, canEat: false, seasons: ['winter'] },
+  holly: { id: 'holly', name: '冬青', type: 'resource', icon: '🌿', description: '叶子和红浆果深受喜爱。', price: 0, sellPrice: 80, canEat: false, seasons: ['winter'] },
+  red_mushroom: { id: 'red_mushroom', name: '红蘑菇', type: 'resource', icon: '🍄', description: '这种斑点蘑菇很辣。', price: 0, sellPrice: 75, canEat: false, energy: -50 },
+  purple_mushroom: { id: 'purple_mushroom', name: '紫蘑菇', type: 'resource', icon: '🍄', description: '一种稀有的蘑菇。', price: 0, sellPrice: 250, canEat: true, energy: 125 },
+  clam: { id: 'clam', name: '蛤蜊', type: 'resource', icon: '🐚', description: '一种有橡胶质感的软体动物。', price: 0, sellPrice: 50, canEat: false },
+  coral: { id: 'coral', name: '珊瑚', type: 'resource', icon: '🪸', description: '生活在海洋里的小生物的群落。', price: 0, sellPrice: 80, canEat: false },
+  sea_urchin: { id: 'sea_urchin', name: '海胆', type: 'resource', icon: '⚫', description: '一种行动缓慢带刺的生物。', price: 0, sellPrice: 160, canEat: false },
+  rainbow_shell: { id: 'rainbow_shell', name: '彩虹贝壳', type: 'resource', icon: '🐚', description: '一个非常漂亮的贝壳。', price: 0, sellPrice: 300, canEat: false },
+  nautilus_shell: { id: 'nautilus_shell', name: '鹦鹉螺贝壳', type: 'resource', icon: '🐚', description: '一个古老的贝壳。', price: 0, sellPrice: 120, canEat: false },
+  coconut: { id: 'coconut', name: '椰子', type: 'resource', icon: '🥥', description: '椰子树的种子。', price: 0, sellPrice: 100, canEat: true, energy: 25 },
+  cactus_fruit: { id: 'cactus_fruit', name: '仙人掌果子', type: 'resource', icon: '🌵', description: '这种甜美多汁的水果带刺。', price: 0, sellPrice: 75, canEat: true, energy: 75 },
 
   // --- Fish ---
-  sardine: { id: 'sardine', name: '沙丁鱼', type: 'fish', icon: '🐟', description: '一种常见的海鱼。', price: 0, sellPrice: 40, canEat: true, energy: 13, locations: ['ocean'], seasons: ['spring', 'autumn', 'winter'], time: ['day'] },
+   sardine: { id: 'sardine', name: '沙丁鱼', type: 'fish', icon: '🐟', description: '一种常见的海鱼。', price: 0, sellPrice: 40, canEat: true, energy: 13, locations: ['ocean'], seasons: ['spring', 'autumn', 'winter'], time: ['day'] },
   bream: { id: 'bream', name: '比目鱼', type: 'fish', icon: '🐟', description: '夜行性鱼类。', price: 0, sellPrice: 45, canEat: true, energy: 13, locations: ['river'], seasons: ['all'], time: ['night'] },
   largemouth_bass: { id: 'largemouth_bass', name: '大嘴鲈鱼', type: 'fish', icon: '🐟', description: '湖中的霸主。', price: 0, sellPrice: 100, canEat: true, energy: 38, locations: ['lake'], seasons: ['all'], time: ['day'] },
   smallmouth_bass: { id: 'smallmouth_bass', name: '小嘴鲈鱼', type: 'fish', icon: '🐟', description: '一种淡水鱼。', price: 0, sellPrice: 50, canEat: true, energy: 25, locations: ['river', 'lake'], seasons: ['spring', 'autumn'], time: ['all'] },
@@ -256,20 +409,64 @@ export const ITEMS: Record<string, ItemDefinition> = {
   broken_glasses: { id: 'broken_glasses', name: '破损的眼镜', type: 'trash', icon: '👓', description: '看起来像是有人丢了眼镜。', price: 0, sellPrice: 0 },
   broken_cd: { id: 'broken_cd', name: '破损的CD', type: 'trash', icon: '💿', description: '这是一张JojaNet 2.0体验版CD。', price: 0, sellPrice: 0 },
   soggy_newspaper: { id: 'soggy_newspaper', name: '湿报纸', type: 'trash', icon: '📰', description: '这是一张湿透的报纸。', price: 0, sellPrice: 0 },
+  pufferfish: { id: 'pufferfish', name: '河豚', type: 'fish', icon: '🐡', description: '受到威胁时会膨胀。', price: 0, sellPrice: 200, canEat: true, energy: -100, seasons: ['summer'], weather: ['sun'], locations: ['ocean'], difficulty: 80 },
+  anchovy: { id: 'anchovy', name: '凤尾鱼', type: 'fish', icon: '🐟', description: '海里的小鱼。', price: 0, sellPrice: 30, canEat: true, energy: 13, seasons: ['spring', 'autumn'], locations: ['ocean'], difficulty: 30 },
+  tuna: { id: 'tuna', name: '金枪鱼', type: 'fish', icon: '🐟', description: '一种生活在海里的大鱼。', price: 0, sellPrice: 100, canEat: true, energy: 38, seasons: ['summer', 'winter'], locations: ['ocean'], difficulty: 70 },
+  sardine: { id: 'sardine', name: '沙丁鱼', type: 'fish', icon: '🐟', description: '一种常见的海鱼。', price: 0, sellPrice: 40, canEat: true, energy: 13, seasons: ['spring', 'autumn', 'winter'], locations: ['ocean'], difficulty: 30 },
+  bream: { id: 'bream', name: '布雷姆鱼', type: 'fish', icon: '🐟', description: '夜间出没的河鱼。', price: 0, sellPrice: 45, canEat: true, energy: 13, seasons: ['all'], time: ['night'], locations: ['river'], difficulty: 35 },
+  largemouth_bass: { id: 'largemouth_bass', name: '大嘴鲈鱼', type: 'fish', icon: '🐟', description: '生活在湖里的人气鱼类。', price: 0, sellPrice: 100, canEat: true, energy: 38, seasons: ['all'], locations: ['lake'], difficulty: 50 },
+  smallmouth_bass: { id: 'smallmouth_bass', name: '小嘴鲈鱼', type: 'fish', icon: '🐟', description: '生活在淡水里。', price: 0, sellPrice: 50, canEat: true, energy: 25, seasons: ['spring', 'autumn'], locations: ['river', 'lake'], difficulty: 28 },
+  rainbow_trout: { id: 'rainbow_trout', name: '虹鳟鱼', type: 'fish', icon: '🐟', description: '有着彩虹色斑纹的淡水鱼。', price: 0, sellPrice: 65, canEat: true, energy: 25, seasons: ['summer'], locations: ['river', 'mountain'], difficulty: 45 },
+  salmon: { id: 'salmon', name: '鲑鱼', type: 'fish', icon: '🐟', description: '会游到上游产卵。', price: 0, sellPrice: 75, canEat: true, energy: 38, seasons: ['autumn'], locations: ['river'], difficulty: 50 },
+  walleye: { id: 'walleye', name: '大眼鱼', type: 'fish', icon: '🐟', description: '这种鱼在夜间捕食。', price: 0, sellPrice: 105, canEat: true, energy: 30, seasons: ['autumn'], weather: ['rain'], time: ['night'], locations: ['river', 'lake'], difficulty: 45 },
+  carp: { id: 'carp', name: '鲤鱼', type: 'fish', icon: '🐟', description: '一种常见的池塘鱼类。', price: 0, sellPrice: 30, canEat: true, energy: 13, seasons: ['all'], locations: ['lake', 'sewer'], difficulty: 15 },
+  catfish: { id: 'catfish', name: '鲶鱼', type: 'fish', icon: '🐟', description: '一种常见的鱼，喜欢泥泞的水。', price: 0, sellPrice: 200, canEat: true, energy: 50, seasons: ['spring', 'autumn'], weather: ['rain'], locations: ['river'], difficulty: 75 },
+  sunfish: { id: 'sunfish', name: '太阳鱼', type: 'fish', icon: '🐟', description: '一种常见的河鱼。', price: 0, sellPrice: 30, canEat: true, energy: 13, seasons: ['spring', 'summer'], weather: ['sun'], locations: ['river'], difficulty: 30 },
+  red_snapper: { id: 'red_snapper', name: '红鲷鱼', type: 'fish', icon: '🐟', description: '一种有着美丽红色的海鱼。', price: 0, sellPrice: 50, canEat: true, energy: 25, seasons: ['summer', 'autumn'], weather: ['rain'], locations: ['ocean'], difficulty: 40 },
+  eel: { id: 'eel', name: '鳗鱼', type: 'fish', icon: '🐍', description: '一种细长滑溜的鱼。', price: 0, sellPrice: 85, canEat: true, energy: 30, seasons: ['spring', 'autumn'], weather: ['rain'], time: ['night'], locations: ['ocean'], difficulty: 70 },
+  octopus: { id: 'octopus', name: '章鱼', type: 'fish', icon: '🐙', description: '一种神秘而聪明的生物。', price: 0, sellPrice: 150, canEat: true, energy: 0, seasons: ['summer'], locations: ['ocean'], difficulty: 95 },
+  squid: { id: 'squid', name: '鱿鱼', type: 'fish', icon: '🦑', description: '一种深海生物。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['winter'], time: ['night'], locations: ['ocean'], difficulty: 75 },
+  sturgeon: { id: 'sturgeon', name: '鲟鱼', type: 'fish', icon: '🐟', description: '一种古老的底栖鱼类。', price: 0, sellPrice: 200, canEat: true, energy: 25, seasons: ['summer', 'winter'], locations: ['lake'], difficulty: 78 },
+  tiger_trout: { id: 'tiger_trout', name: '虎纹鳟鱼', type: 'fish', icon: '🐟', description: '一种稀有的混合鱼类。', price: 0, sellPrice: 150, canEat: true, energy: 25, seasons: ['autumn', 'winter'], locations: ['river'], difficulty: 60 },
+  sandfish: { id: 'sandfish', name: '沙鱼', type: 'fish', icon: '🐟', description: '它试图用伪装来隐藏自己。', price: 0, sellPrice: 75, canEat: true, energy: 13, seasons: ['all'], locations: ['desert'], difficulty: 65 },
+  scorpion_carp: { id: 'scorpion_carp', name: '蝎子鲤鱼', type: 'fish', icon: '🐟', description: '它像常见的鲤鱼，但是有剧毒刺。', price: 0, sellPrice: 150, canEat: true, energy: -125, seasons: ['all'], locations: ['desert'], difficulty: 90 },
+  woodskip: { id: 'woodskip', name: '木跃鱼', type: 'fish', icon: '🐟', description: '一种生活在森林深处的非常敏感的鱼。', price: 0, sellPrice: 75, canEat: true, energy: 25, seasons: ['all'], locations: ['forest'], difficulty: 50 },
+  void_salmon: { id: 'void_salmon', name: '虚空鲑鱼', type: 'fish', icon: '🐟', description: '一种被虚空能量扭曲的鲑鱼。', price: 0, sellPrice: 150, canEat: true, energy: 63, seasons: ['all'], locations: ['witch_swamp'], difficulty: 80 },
+  lava_eel: { id: 'lava_eel', name: '岩浆鳗鱼', type: 'fish', icon: '🐍', description: '它可以在炽热的岩浆中生存。', price: 0, sellPrice: 700, canEat: true, energy: 50, seasons: ['all'], locations: ['mine_lava'], difficulty: 90 },
+  ice_pip: { id: 'ice_pip', name: '冰柱鱼', type: 'fish', icon: '🐟', description: '一种可以在极度寒冷中生存的鱼。', price: 0, sellPrice: 500, canEat: true, energy: 38, seasons: ['all'], locations: ['mine_ice'], difficulty: 85 },
+  stonefish: { id: 'stonefish', name: '石鱼', type: 'fish', icon: '🐟', description: '一种奇怪的鱼，形状像砖头。', price: 0, sellPrice: 300, canEat: true, energy: 0, seasons: ['all'], locations: ['mine'], difficulty: 65 },
+  ghostfish: { id: 'ghostfish', name: '鬼鱼', type: 'fish', icon: '👻', description: '一种苍白的盲鱼。', price: 0, sellPrice: 45, canEat: true, energy: 38, seasons: ['all'], locations: ['mine'], difficulty: 50 },
 
-  // --- Minerals ---
-  quartz: { id: 'quartz', name: '石英', type: 'mineral', icon: '💎', description: '一种在洞穴和矿井中常见的晶体。', price: 0, sellPrice: 25 },
-  earth_crystal: { id: 'earth_crystal', name: '地晶', type: 'mineral', icon: '💎', description: '一种在近地表发现的树脂状物质。', price: 0, sellPrice: 50 },
-  frozen_tear: { id: 'frozen_tear', name: '冰封眼泪', type: 'mineral', icon: '💎', description: '据说这是雪人的眼泪。', price: 0, sellPrice: 75 },
-  fire_quartz: { id: 'fire_quartz', name: '火水晶', type: 'mineral', icon: '💎', description: '一种在熔岩附近发现的发光晶体。', price: 0, sellPrice: 100 },
-  emerald: { id: 'emerald', name: '祖母绿', type: 'mineral', icon: '💎', description: '一种亮绿色的宝石。', price: 0, sellPrice: 250 },
+  // --- Artisan Goods ---
+  honey: { id: 'honey', name: '蜂蜜', type: 'resource', icon: '🍯', description: '蜜蜂生产的甜浆。', price: 0, sellPrice: 100, canEat: true, energy: 50 },
+  mayonnaise: { id: 'mayonnaise', name: '蛋黄酱', type: 'resource', icon: '🥚', description: '看起来适合涂在面包上。', price: 0, sellPrice: 190, canEat: true, energy: 50 },
+  duck_mayonnaise: { id: 'duck_mayonnaise', name: '鸭蛋黄酱', type: 'resource', icon: '🥚', description: '浓郁的黄色蛋黄酱。', price: 0, sellPrice: 375, canEat: true, energy: 50 },
+  void_mayonnaise: { id: 'void_mayonnaise', name: '虚空蛋黄酱', type: 'resource', icon: '🌑', description: '一种浓稠的黑色糊状物，闻起来像烧焦的头发。', price: 0, sellPrice: 275, canEat: true, energy: -50 },
+  cheese: { id: 'cheese', name: '奶酪', type: 'resource', icon: '🧀', description: '你的普通的奶酪。', price: 0, sellPrice: 230, canEat: true, energy: 125 },
+  goat_cheese: { id: 'goat_cheese', name: '山羊奶酪', type: 'resource', icon: '🧀', description: '用山羊奶制成的软奶酪。', price: 0, sellPrice: 400, canEat: true, energy: 125 },
+  cloth: { id: 'cloth', name: '布料', type: 'resource', icon: '🧵', description: '一卷细羊毛布料。', price: 0, sellPrice: 470 },
+  wine: { id: 'wine', name: '果酒', type: 'resource', icon: '🍷', description: '随时间推移而发酵的果汁。', price: 0, sellPrice: 400, canEat: true, energy: 50 },
+  juice: { id: 'juice', name: '果汁', type: 'resource', icon: '🧃', description: '新鲜的农产品汁。', price: 0, sellPrice: 150, canEat: true, energy: 75 },
+  beer: { id: 'beer', name: '啤酒', type: 'resource', icon: '🍺', description: '如果你喝得太多，就会头晕。', price: 0, sellPrice: 200, canEat: true, energy: 50 },
+  pale_ale: { id: 'pale_ale', name: '淡啤酒', type: 'resource', icon: '🍺', description: '喝一点，会让你的精神好起来。', price: 0, sellPrice: 300, canEat: true, energy: 50 },
+  mead: { id: 'mead', name: '蜜蜂酒', type: 'resource', icon: '🍺', description: '用蜂蜜酿造的发酵饮料。', price: 0, sellPrice: 200, canEat: true, energy: 75 },
+  pickles: { id: 'pickles', name: '腌菜', type: 'resource', icon: '🥒', description: '一罐自家做的腌菜。', price: 0, sellPrice: 100, canEat: true, energy: 25 },
+  jelly: { id: 'jelly', name: '果酱', type: 'resource', icon: '🍯', description: '粘稠的果酱。', price: 0, sellPrice: 160, canEat: true, energy: 50 },
+  truffle_oil: { id: 'truffle_oil', name: '松露油', type: 'resource', icon: '🍾', description: '美食必备的成分。', price: 0, sellPrice: 1065, canEat: true, energy: 38 },
+
+  // --- Minerals & Artifacts ---
+  quartz: { id: 'quartz', name: '石英', type: 'mineral', icon: '💎', description: '一种可以在矿洞和地表找到的透明晶体。', price: 0, sellPrice: 25 },
+  earth_crystal: { id: 'earth_crystal', name: '土之结晶', type: 'mineral', icon: '💎', description: '在地表附近发现的树脂状物质。', price: 0, sellPrice: 50 },
+  frozen_tear: { id: 'frozen_tear', name: '冰封眼泪', type: 'mineral', icon: '💎', description: '传说这是雪人的眼泪冻结而成的。', price: 0, sellPrice: 75 },
+  fire_quartz: { id: 'fire_quartz', name: '火石英', type: 'mineral', icon: '💎', description: '一种通常在岩浆附近发现的发光晶体。', price: 0, sellPrice: 100 },
+  emerald: { id: 'emerald', name: '绿宝石', type: 'mineral', icon: '💎', description: '一种有着亮绿色的宝石。', price: 0, sellPrice: 250 },
   aquamarine: { id: 'aquamarine', name: '海蓝宝石', type: 'mineral', icon: '💎', description: '一种闪闪发光的蓝绿色宝石。', price: 0, sellPrice: 180 },
-  ruby: { id: 'ruby', name: '红宝石', type: 'mineral', icon: '💎', description: '一种因其深红色而受人喜爱的宝石。', price: 0, sellPrice: 250 },
-  amethyst: { id: 'amethyst', name: '紫水晶', type: 'mineral', icon: '💎', description: '一种紫色的水晶。', price: 0, sellPrice: 100 },
-  topaz: { id: 'topaz', name: '黄玉', type: 'mineral', icon: '💎', description: '非常常见。', price: 0, sellPrice: 80 },
-  jade: { id: 'jade', name: '翡翠', type: 'mineral', icon: '💎', description: '一种淡绿色的观赏石。', price: 0, sellPrice: 200 },
+  ruby: { id: 'ruby', name: '红宝石', type: 'mineral', icon: '💎', description: '一种因其浓艳的颜色和光泽而受人追捧的宝石。', price: 0, sellPrice: 250 },
+  amethyst: { id: 'amethyst', name: '紫水晶', type: 'mineral', icon: '💎', description: '一种紫色的变种石英。', price: 0, sellPrice: 100 },
+  topaz: { id: 'topaz', name: '黄水晶', type: 'mineral', icon: '💎', description: '相当常见，但因其美观而受人喜爱。', price: 0, sellPrice: 80 },
+  jade: { id: 'jade', name: '翡翠', type: 'mineral', icon: '💎', description: '一种淡绿色的装饰石。', price: 0, sellPrice: 200 },
   diamond: { id: 'diamond', name: '钻石', type: 'mineral', icon: '💎', description: '一种稀有而昂贵的宝石。', price: 0, sellPrice: 750 },
-  prismatic_shard: { id: 'prismatic_shard', name: '五彩碎片', type: 'mineral', icon: '🌈', description: '一种来源未知的非常稀有的强大物质。', price: 0, sellPrice: 2000 },
+    prismatic_shard: { id: 'prismatic_shard', name: '五彩碎片', type: 'mineral', icon: '🌈', description: '一种来源未知的非常稀有的强大物质。', price: 0, sellPrice: 2000 },
   geode: { id: 'geode', name: '晶球', type: 'mineral', icon: '🪨', description: '你可以找铁匠敲开它。', price: 0, sellPrice: 50 },
   frozen_geode: { id: 'frozen_geode', name: '冰封晶球', type: 'mineral', icon: '🪨', description: '你可以找铁匠敲开它。', price: 0, sellPrice: 100 },
   magma_geode: { id: 'magma_geode', name: '岩浆晶球', type: 'mineral', icon: '🪨', description: '你可以找铁匠敲开它。', price: 0, sellPrice: 150 },
@@ -302,56 +499,18 @@ export const ITEMS: Record<string, ItemDefinition> = {
   palm_fossil: { id: 'palm_fossil', name: '棕榈化石', type: 'artifact', icon: '🌴', description: '棕榈树化石。', price: 0, sellPrice: 100 },
   anchor: { id: 'anchor', name: '锚', type: 'artifact', icon: '⚓', description: '它可能属于古代的海盗。', price: 0, sellPrice: 100 },
 
-  // --- Crafting & Machines ---
-  basic_fertilizer: { id: 'basic_fertilizer', name: '基础肥料', type: 'misc', icon: '💩', description: '提高土壤质量。', price: 100, sellPrice: 2 },
-  quality_fertilizer: { id: 'quality_fertilizer', name: '优质肥料', type: 'misc', icon: '💩', description: '提高土壤质量，增加种植出优质作物的概率。', price: 150, sellPrice: 10 },
-  speed_gro: { id: 'speed_gro', name: '加速肥料', type: 'misc', icon: '⚡', description: '促进叶子生长。保证让作物生长速度加快至少10%。', price: 100, sellPrice: 20 },
-  deluxe_speed_gro: { id: 'deluxe_speed_gro', name: '高级加速肥料', type: 'misc', icon: '⚡', description: '促进叶子生长。保证让作物生长速度加快至少25%。', price: 150, sellPrice: 40 },
-  tree_fertilizer: { id: 'tree_fertilizer', name: '树肥', type: 'misc', icon: '🌳', description: '撒在野生树木上，即使是在冬天也能快速生长。', price: 0, sellPrice: 0 },
+  // --- Crafting & Machines (Additional) ---
 
-  tapper: { id: 'tapper', name: '树液采集器', type: 'misc', icon: '🏺', description: '放置在枫树、橡树或松树上。', price: 0, sellPrice: 0 },
   charcoal_kiln: { id: 'charcoal_kiln', name: '木炭窑', type: 'misc', icon: '🔥', description: '把木头烧成木炭。', price: 0, sellPrice: 0 },
   crab_pot: { id: 'crab_pot', name: '蟹笼', type: 'misc', icon: '🦀', description: '把它放在水里，装上诱饵，隔天再来查看有没有抓到东西。', price: 1500, sellPrice: 0 },
-  staircase: { id: 'staircase', name: '楼梯', type: 'misc', icon: '🪜', description: '用来快速下矿。', price: 0, sellPrice: 0 },
 
-  wood_fence: { id: 'wood_fence', name: '木围栏', type: 'misc', icon: '🚧', description: '阻挡移动。', price: 0, sellPrice: 1 },
-  stone_fence: { id: 'stone_fence', name: '石围栏', type: 'misc', icon: '🪨', description: '坚固的围栏。', price: 0, sellPrice: 2 },
-  iron_fence: { id: 'iron_fence', name: '铁围栏', type: 'misc', icon: '⛓️', description: '非常耐用的围栏。', price: 0, sellPrice: 5 },
-  gate: { id: 'gate', name: '大门', type: 'misc', icon: '🚪', description: '允许通过围栏。', price: 0, sellPrice: 4 },
-
-  chest: { id: 'chest', name: '箱子', type: 'misc', icon: '📦', description: '储存物品。', price: 0, sellPrice: 0 },
   torch: { id: 'torch', name: '火把', type: 'misc', icon: '🔥', description: '提供照明。', price: 0, sellPrice: 5 },
-  scarecrow: { id: 'scarecrow', name: '稻草人', type: 'misc', icon: '☃️', description: '防止乌鸦吃掉作物。', price: 0, sellPrice: 0 },
 
-  furnace: { id: 'furnace', name: '熔炉', type: 'misc', icon: '🔥', description: '将矿石冶炼成锭。', price: 0, sellPrice: 0 },
-  mayonnaise_machine: { id: 'mayonnaise_machine', name: '蛋黄酱机', type: 'misc', icon: '🥚', description: '把鸡蛋加工成蛋黄酱。', price: 0, sellPrice: 0 },
-  cheese_press: { id: 'cheese_press', name: '压酪机', type: 'misc', icon: '🧀', description: '把牛奶加工成奶酪。', price: 0, sellPrice: 0 },
-  preserves_jar: { id: 'preserves_jar', name: '罐头瓶', type: 'misc', icon: '🥫', description: '把蔬菜变成泡菜，把水果变成果酱。', price: 0, sellPrice: 0 },
-  keg: { id: 'keg', name: '小桶', type: 'misc', icon: '🍺', description: '酿造饮料。', price: 0, sellPrice: 0 },
-  loom: { id: 'loom', name: '织布机', type: 'misc', icon: '🧶', description: '将原毛加工成精细的布料。', price: 0, sellPrice: 0 },
-  oil_maker: { id: 'oil_maker', name: '榨油机', type: 'misc', icon: '🫗', description: '用松露制作美味的松露油。', price: 0, sellPrice: 0 },
-  bee_house: { id: 'bee_house', name: '蜂房', type: 'misc', icon: '🐝', description: '利用花朵生产蜂蜜。', price: 0, sellPrice: 0 },
   geode_crusher: { id: 'geode_crusher', name: '晶球破开器', type: 'misc', icon: '🔨', description: '可以破开晶球。', price: 0, sellPrice: 0 },
-  recycling_machine: { id: 'recycling_machine', name: '回收机', type: 'misc', icon: '♻️', description: '把垃圾变成有用的东西。', price: 0, sellPrice: 0 },
-  lightning_rod: { id: 'lightning_rod', name: '避雷针', type: 'misc', icon: '⚡', description: '从雷暴中收集能量。', price: 0, sellPrice: 0 },
   slime_egg_press: { id: 'slime_egg_press', name: '史莱姆蛋压制机', type: 'misc', icon: '🟢', description: '将史莱姆压缩成史莱姆蛋。', price: 0, sellPrice: 0 },
-  worm_bin: { id: 'worm_bin', name: '虫饵盒', type: 'misc', icon: '🪱', description: '定期生产鱼饵。', price: 0, sellPrice: 0 },
-  seed_maker: { id: 'seed_maker', name: '种子生产器', type: 'misc', icon: '🌱', description: '从收获的作物中提取种子。', price: 0, sellPrice: 0 },
-  crystalarium: { id: 'crystalarium', name: '宝石复制机', type: 'misc', icon: '💎', description: '放入宝石，它会无限复制。', price: 0, sellPrice: 0 },
-  mini_jukebox: { id: 'mini_jukebox', name: '迷你点唱机', type: 'misc', icon: '🎵', description: '播放你喜欢的曲子。', price: 0, sellPrice: 0 },
-
-  sprinkler: { id: 'sprinkler', name: '洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的4个地块浇水。', price: 0, sellPrice: 100 },
-  quality_sprinkler: { id: 'quality_sprinkler', name: '优质洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的8个地块浇水。', price: 0, sellPrice: 450 },
-  iridium_sprinkler: { id: 'iridium_sprinkler', name: '铱制洒水器', type: 'misc', icon: '🚿', description: '每天早上给邻近的24个地块浇水。', price: 0, sellPrice: 1000 },
-
-  cherry_bomb: { id: 'cherry_bomb', name: '樱桃炸弹', type: 'misc', icon: '💣', description: '产生一个小爆炸。', price: 300, sellPrice: 0 },
-  bomb: { id: 'bomb', name: '炸弹', type: 'misc', icon: '💣', description: '产生爆炸。小心！', price: 600, sellPrice: 0 },
-  mega_bomb: { id: 'mega_bomb', name: '超级炸弹', type: 'misc', icon: '💣', description: '产生巨大的爆炸。极度危险！', price: 1000, sellPrice: 0 },
 
   glow_ring: { id: 'glow_ring', name: '发光戒指', type: 'misc', icon: '💍', description: '发出恒定的光。', price: 0, sellPrice: 100 },
   magnet_ring: { id: 'magnet_ring', name: '磁铁戒指', type: 'misc', icon: '💍', description: '增加收集物品的磁力半径。', price: 0, sellPrice: 100 },
-  glowstone_ring: { id: 'glowstone_ring', name: '辉石戒指', type: 'misc', icon: '💍', description: '发出恒定的光，并增加收集物品的磁力半径。', price: 0, sellPrice: 200 },
-  iridium_band: { id: 'iridium_band', name: '铱环', type: 'misc', icon: '💍', description: '发光，吸引物品，并增加10%的攻击伤害。', price: 0, sellPrice: 1000 },
 
   // --- Weapons ---
   rusty_sword: { id: 'rusty_sword', name: '生锈的剑', type: 'weapon', icon: '🗡️', description: '一把生锈的旧剑。', price: 0, sellPrice: 50 },
@@ -379,11 +538,67 @@ export const ITEMS: Record<string, ItemDefinition> = {
   // --- Hats ---
   straw_hat: { id: 'straw_hat', name: '草帽', type: 'misc', icon: '👒', description: '透气凉爽。', price: 0, sellPrice: 0 },
   cowboy_hat: { id: 'cowboy_hat', name: '牛仔帽', type: 'misc', icon: '🤠', description: 'Yee-haw!', price: 0, sellPrice: 0 },
-
-  // --- Furniture ---
+    // --- Furniture ---
   oak_chair: { id: 'oak_chair', name: '橡木椅', type: 'furniture', icon: '🪑', description: '一把普通的椅子。', price: 350, sellPrice: 0 },
   walnut_chair: { id: 'walnut_chair', name: '核桃木椅', type: 'furniture', icon: '🪑', description: '一把优雅的椅子。', price: 350, sellPrice: 0 },
   oak_bench: { id: 'oak_bench', name: '橡木长椅', type: 'furniture', icon: '🛋️', description: '可以坐两个人。', price: 500, sellPrice: 0 },
   rustic_plank_floor: { id: 'rustic_plank_floor', name: '乡村木地板', type: 'furniture', icon: '🪵', description: '让你的房子有家的感觉。', price: 100, sellPrice: 0 },
   stone_floor: { id: 'stone_floor', name: '石地板', type: 'furniture', icon: '🪨', description: '坚固耐用。', price: 100, sellPrice: 0 },
+  prismatic_shard: { id: 'prismatic_shard', name: '五彩碎片', type: 'mineral', icon: '🌈', description: '一种非常稀有且强大的物质，其起源不明。', price: 0, sellPrice: 2000 },
+  geode: { id: 'geode', name: '晶球', type: 'resource', icon: '🪨', description: '铁匠可以帮你把它砸开。', price: 0, sellPrice: 50 },
+  frozen_geode: { id: 'frozen_geode', name: '冰封晶球', type: 'resource', icon: '🪨', description: '铁匠可以帮你把它砸开。', price: 0, sellPrice: 100 },
+  magma_geode: { id: 'magma_geode', name: '岩浆晶球', type: 'resource', icon: '🪨', description: '铁匠可以帮你把它砸开。', price: 0, sellPrice: 150 },
+  omni_geode: { id: 'omni_geode', name: '万象晶球', type: 'resource', icon: '🪨', description: '铁匠可以帮你把它砸开。', price: 0, sellPrice: 0 },
+
+  // --- Food ---
+  bread: { id: 'bread', name: '面包', type: 'food', icon: '🍞', description: '用小麦粉做的硬皮面包。', price: 120, sellPrice: 60, canEat: true, energy: 50, health: 22 },
+  fried_egg: { id: 'fried_egg', name: '煎蛋', type: 'food', icon: '🍳', description: '单面煎。', price: 0, sellPrice: 35, canEat: true, energy: 50, health: 22 },
+  omelet: { id: 'omelet', name: '煎蛋卷', type: 'food', icon: '🍳', description: '超级松软。', price: 0, sellPrice: 125, canEat: true, energy: 100, health: 45 },
+  salad: { id: 'salad', name: '沙拉', type: 'food', icon: '🥗', description: '健康的田园沙拉。', price: 220, sellPrice: 110, canEat: true, energy: 113, health: 50 },
+  cheese_cauliflower: { id: 'cheese_cauliflower', name: '奶酪花椰菜', type: 'food', icon: '🍲', description: '闻起来很棒！', price: 0, sellPrice: 300, canEat: true, energy: 138, health: 62 },
+  parsnip_soup: { id: 'parsnip_soup', name: '防风草汤', type: 'food', icon: '🥣', description: '新鲜又丰盛。', price: 0, sellPrice: 120, canEat: true, energy: 85, health: 38 },
+  vegetable_medley: { id: 'vegetable_medley', name: '蔬菜什锦盖饭', type: 'food', icon: '🍲', description: '这非常有营养。', price: 0, sellPrice: 120, canEat: true, energy: 165, health: 74 },
+  complete_breakfast: { id: 'complete_breakfast', name: '完美早餐', type: 'food', icon: '🥞', description: '你会准备好迎接这个世界！', price: 0, sellPrice: 350, canEat: true, energy: 200, health: 90 },
+  fried_calamari: { id: 'fried_calamari', name: '炸鱿鱼', type: 'food', icon: '🍤', description: '它太有嚼劲了。', price: 0, sellPrice: 150, canEat: true, energy: 80, health: 36 },
+  lucky_lunch: { id: 'lucky_lunch', name: '幸运午餐', type: 'food', icon: '🍱', description: '一顿特别的午餐。', price: 0, sellPrice: 250, canEat: true, energy: 100, health: 45 },
+  pizza: { id: 'pizza', name: '披萨', type: 'food', icon: '🍕', description: '很受欢迎，理由很充分。', price: 600, sellPrice: 300, canEat: true, energy: 150, health: 67 },
+  sashimi: { id: 'sashimi', name: '生鱼片', type: 'food', icon: '🍣', description: '切成薄片的生鱼。', price: 0, sellPrice: 75, canEat: true, energy: 75, health: 33 },
+  maki_roll: { id: 'maki_roll', name: '寿司卷', type: 'food', icon: '🍣', description: '紫菜裹着米饭和鱼。', price: 0, sellPrice: 220, canEat: true, energy: 100, health: 45 },
+  tortilla: { id: 'tortilla', name: '玉米饼', type: 'food', icon: '🌮', description: '可以用作其他食物的容器，也可以直接食用。', price: 0, sellPrice: 50, canEat: true, energy: 50, health: 22 },
+  farmer_lunch: { id: 'farmer_lunch', name: '农夫午餐', type: 'food', icon: '🍲', description: '这肯定能让你继续工作。', price: 0, sellPrice: 150, canEat: true, energy: 200, health: 90 },
+  survival_burger: { id: 'survival_burger', name: '救生汉堡', type: 'food', icon: '🍔', description: '探险家的方便零食。', price: 0, sellPrice: 180, canEat: true, energy: 125, health: 56 },
+  dish_o_the_sea: { id: 'dish_o_the_sea', name: '海之菜肴', type: 'food', icon: '🍲', description: '这会让你在海风中保持温暖。', price: 0, sellPrice: 220, canEat: true, energy: 150, health: 67 },
+  miner_treat: { id: 'miner_treat', name: '矿工特供', type: 'food', icon: '🍭', description: '这应该能让你保持精力充沛。', price: 0, sellPrice: 200, canEat: true, energy: 125, health: 56 },
+  roots_platter: { id: 'roots_platter', name: '块茎拼盘', type: 'food', icon: '🍲', description: '这会让你渴望深挖地底。', price: 0, sellPrice: 100, canEat: true, energy: 125, health: 56 },
+  pink_cake: { id: 'pink_cake', name: '粉红蛋糕', type: 'food', icon: '🍰', description: '上面有小爱心糖果。', price: 0, sellPrice: 480, canEat: true, energy: 250, health: 112 },
+  chocolate_cake: { id: 'chocolate_cake', name: '巧克力蛋糕', type: 'food', icon: '🍰', description: '口感丰富，湿润甜美。', price: 0, sellPrice: 200, canEat: true, energy: 150, health: 67 },
+  spicy_eel: { id: 'spicy_eel', name: '香辣鳗鱼', type: 'food', icon: '🍲', description: '真的很辣！', price: 0, sellPrice: 175, canEat: true, energy: 115, health: 51 },
+  carp_surprise: { id: 'carp_surprise', name: '惊喜鲤鱼', type: 'food', icon: '🍲', description: '平淡无奇且油腻。', price: 0, sellPrice: 150, canEat: true, energy: 90, health: 40 },
+  salmon_dinner: { id: 'salmon_dinner', name: '鲑鱼晚餐', type: 'food', icon: '🍽️', description: '柠檬汁给它增添了特别的风味。', price: 0, sellPrice: 300, canEat: true, energy: 125, health: 56 },
+  fish_taco: { id: 'fish_taco', name: '鱼肉卷', type: 'food', icon: '🌮', description: '闻起来很美味。', price: 0, sellPrice: 500, canEat: true, energy: 165, health: 74 },
+  crispy_bass: { id: 'crispy_bass', name: '香酥鲈鱼', type: 'food', icon: '🍲', description: '哇，面包屑真完美。', price: 0, sellPrice: 150, canEat: true, energy: 90, health: 40 },
+  pepper_poppers: { id: 'pepper_poppers', name: '爆炒青椒', type: 'food', icon: '🍲', description: '裹上面包屑的热辣辣椒里面塞满了奶酪。', price: 0, sellPrice: 200, canEat: true, energy: 130, health: 58 },
+  tom_kha_soup: { id: 'tom_kha_soup', name: '椰汁汤', type: 'food', icon: '🍲', description: '这真是太好喝了！', price: 0, sellPrice: 250, canEat: true, energy: 175, health: 78 },
+  spaghetti: { id: 'spaghetti', name: '意大利面', type: 'food', icon: '🍝', description: '经典的美味佳肴。', price: 240, sellPrice: 120, canEat: true, energy: 75, health: 33 },
+  field_snack: { id: 'field_snack', name: '田野小吃', type: 'food', icon: '🍪', description: '快速补充能量。', price: 0, sellPrice: 20, canEat: true, energy: 45, health: 20 },
+
+  // --- Food (Additional) ---
+  trout_soup: { id: 'trout_soup', name: '鳟鱼汤', type: 'food', icon: '🍲', description: '非常鲜美。', price: 250, sellPrice: 100, canEat: true, energy: 75, health: 33 },
+  beer: { id: 'beer', name: '啤酒', type: 'food', icon: '🍺', description: '适量饮用。', price: 400, sellPrice: 200, canEat: true, energy: 50, health: 22 },
+  coffee: { id: 'coffee', name: '咖啡', type: 'food', icon: '☕', description: '闻起来很香。', price: 300, sellPrice: 150, canEat: true, energy: 3, health: 1 },
+  joja_cola: { id: 'joja_cola', name: 'Joja可乐', type: 'food', icon: '🥤', description: '旗舰产品。', price: 75, sellPrice: 25, canEat: true, energy: 13, health: 5 },
+  energy_tonic: { id: 'energy_tonic', name: '能量滋补剂', type: 'food', icon: '💊', description: '恢复大量能量。', price: 1000, sellPrice: 500, canEat: true, energy: 500, health: 200 },
+  muscle_remedy: { id: 'muscle_remedy', name: '肌肉回复药', type: 'food', icon: '💊', description: '消除疲劳。', price: 1000, sellPrice: 500, canEat: true, energy: 0, health: 20 },
+
+  // --- Animal Supplies ---
+  hay: { id: 'hay', name: '干草', type: 'resource', icon: '🌾', description: '喂养动物的干草。', price: 50, sellPrice: 0 },
+  heater: { id: 'heater', name: '加热器', type: 'misc', icon: '🔥', description: '在冬天让你的动物保持温暖。', price: 2000, sellPrice: 0 },
+  auto_grabber: { id: 'auto_grabber', name: '自动采集器', type: 'misc', icon: '🤖', description: '自动收集动物产品。', price: 25000, sellPrice: 0 },
+
+  // --- Misc ---
+  trash: { id: 'trash', name: '垃圾', type: 'trash', icon: '🗑️', description: '就是垃圾。', price: 0, sellPrice: 0 },
+  driftwood: { id: 'driftwood', name: '浮木', type: 'trash', icon: '🪵', description: '从海里漂来的一块木头。', price: 0, sellPrice: 0 },
+  broken_glasses: { id: 'broken_glasses', name: '破损的眼镜', type: 'trash', icon: '👓', description: '好像有人把眼镜弄丢了。', price: 0, sellPrice: 0 },
+  broken_cd: { id: 'broken_cd', name: '破损的CD', type: 'trash', icon: '💿', description: '这是JojaNet 2.0试用光盘。', price: 0, sellPrice: 0 },
+  soggy_newspaper: { id: 'soggy_newspaper', name: '湿透的报纸', type: 'trash', icon: '📰', description: '这简直是一团糟。', price: 0, sellPrice: 0 },
 }

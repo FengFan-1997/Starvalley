@@ -1,9 +1,22 @@
 <template>
   <div class="crafting-container">
+    <!-- Category Tabs -->
+    <div class="tabs">
+        <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            class="tab-btn"
+            :class="{ active: currentTab === tab.key }"
+            @click="currentTab = tab.key"
+        >
+            {{ tab.label }}
+        </button>
+    </div>
+
     <!-- Recipes Grid -->
     <div class="recipes-grid">
       <div
-        v-for="recipe in recipes"
+        v-for="recipe in filteredRecipes"
         :key="recipe.id"
         class="recipe-slot"
         :class="{
@@ -67,6 +80,43 @@ const recipes = computed(() => gameStore.craftingRecipes)
 const inventory = computed(() => gameStore.gameState.inventory)
 const selectedRecipe = ref<CraftingRecipe | null>(null)
 
+const tabs = [
+    { key: 'all', label: '全部' },
+    { key: 'equipment', label: '设备' },
+    { key: 'decor', label: '装饰' },
+    { key: 'consumable', label: '消耗' },
+    { key: 'misc', label: '杂项' }
+]
+const currentTab = ref('all')
+
+const filteredRecipes = computed(() => {
+    if (currentTab.value === 'all') return recipes.value
+
+    return recipes.value.filter(r => {
+        const id = r.id.toLowerCase()
+        if (currentTab.value === 'equipment') {
+            return id.includes('chest') || id.includes('furnace') || id.includes('maker') ||
+                   id.includes('sprinkler') || id.includes('scarecrow') || id.includes('kiln') ||
+                   id.includes('hive') || id.includes('tapper') || id.includes('press') || id.includes('loom')
+        }
+        if (currentTab.value === 'decor') {
+            return id.includes('fence') || id.includes('floor') || id.includes('path') ||
+                   id.includes('gate') || id.includes('sign') || id.includes('lamp') || id.includes('brazier') || id.includes('torch')
+        }
+        if (currentTab.value === 'consumable') {
+            return id.includes('fertilizer') || id.includes('speed') || id.includes('snack') ||
+                   id.includes('warp') || id.includes('totem') || id.includes('bomb') || id.includes('bait')
+        }
+        if (currentTab.value === 'misc') {
+            // Seeds and others
+            return id.includes('seeds') || (!id.includes('chest') && !id.includes('furnace') && !id.includes('maker') &&
+                   !id.includes('sprinkler') && !id.includes('scarecrow') && !id.includes('fence') && !id.includes('floor') &&
+                   !id.includes('fertilizer') && !id.includes('path') && !id.includes('gate') && !id.includes('sign'))
+        }
+        return true
+    })
+})
+
 const selectRecipe = (recipe: CraftingRecipe) => {
   selectedRecipe.value = recipe
 }
@@ -103,8 +153,37 @@ const craft = (recipe: CraftingRecipe) => {
 .crafting-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   height: 100%;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    padding: 0 10px;
+    margin-bottom: 5px;
+}
+
+.tab-btn {
+    padding: 6px 12px;
+    background: #dcdcdc;
+    border: 3px solid #888;
+    border-bottom: none;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+    color: #555;
+    transition: all 0.1s;
+}
+
+.tab-btn.active {
+    background: #fff;
+    border-color: #d3a068;
+    color: #333;
+    transform: translateY(2px);
+    padding-bottom: 8px;
+    z-index: 10;
 }
 
 .recipes-grid {

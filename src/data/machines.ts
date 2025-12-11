@@ -101,6 +101,90 @@ export const MACHINE_RECIPES: MachineRecipe[] = [
   },
   {
     machineId: 'keg',
+    inputs: [{ itemId: 'grape', quantity: 1 }],
+    output: { itemId: 'wine', quantity: 1 },
+    processingTime: 10000
+  },
+  {
+    machineId: 'keg',
+    inputs: [{ itemId: 'coffee_bean', quantity: 5 }],
+    output: { itemId: 'coffee', quantity: 1 },
+    processingTime: 120
+  },
+  {
+    machineId: 'keg',
+    inputs: [{ itemId: 'honey', quantity: 1 }],
+    output: { itemId: 'mead', quantity: 1 },
+    processingTime: 600
+  },
+  
+  // Loom
+  {
+    machineId: 'loom',
+    inputs: [{ itemId: 'wool', quantity: 1 }],
+    output: { itemId: 'cloth', quantity: 1 },
+    processingTime: 240
+  },
+
+  // Oil Maker
+  {
+    machineId: 'oil_maker',
+    inputs: [{ itemId: 'truffle', quantity: 1 }],
+    output: { itemId: 'truffle_oil', quantity: 1 },
+    processingTime: 360
+  },
+  {
+    machineId: 'oil_maker',
+    inputs: [{ itemId: 'corn', quantity: 1 }],
+    output: { itemId: 'oil', quantity: 1 },
+    processingTime: 1000 // approx 16 hours
+  },
+  {
+    machineId: 'oil_maker',
+    inputs: [{ itemId: 'sunflower_seeds', quantity: 1 }],
+    output: { itemId: 'oil', quantity: 1 },
+    processingTime: 200 // approx 3 hours
+  },
+  {
+    machineId: 'oil_maker',
+    inputs: [{ itemId: 'sunflower', quantity: 1 }],
+    output: { itemId: 'oil', quantity: 1 },
+    processingTime: 60
+  },
+
+  // Recycling Machine
+  {
+    machineId: 'recycling_machine',
+    inputs: [{ itemId: 'trash', quantity: 1 }],
+    output: { itemId: 'stone', quantity: 1 }, // simplified
+    processingTime: 60
+  },
+  {
+    machineId: 'recycling_machine',
+    inputs: [{ itemId: 'driftwood', quantity: 1 }],
+    output: { itemId: 'wood', quantity: 1 }, // simplified
+    processingTime: 60
+  },
+  {
+    machineId: 'recycling_machine',
+    inputs: [{ itemId: 'broken_glasses', quantity: 1 }],
+    output: { itemId: 'refined_quartz', quantity: 1 },
+    processingTime: 60
+  },
+  {
+    machineId: 'recycling_machine',
+    inputs: [{ itemId: 'broken_cd', quantity: 1 }],
+    output: { itemId: 'refined_quartz', quantity: 1 },
+    processingTime: 60
+  },
+  {
+    machineId: 'recycling_machine',
+    inputs: [{ itemId: 'soggy_newspaper', quantity: 1 }],
+    output: { itemId: 'torch', quantity: 3 },
+    processingTime: 60
+  },
+  {
+    machineId: 'keg',
     inputs: [{ itemId: 'tomato', quantity: 1 }],
     output: { itemId: 'juice', quantity: 1 },
     processingTime: 6000

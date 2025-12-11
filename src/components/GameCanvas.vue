@@ -36,15 +36,28 @@ interface DroppedItemContainer extends PIXI.Container {
   droppedId: string
 }
 
+interface WeatherParticle {
+  sprite: PIXI.Graphics
+  vx: number
+  vy: number
+  life: number
+  type: 'rain' | 'snow' | 'cloud'
+}
+
 const gameContainer = ref<HTMLDivElement>()
 const gameStore = useGameStore()
 
 let app: PIXI.Application | null = null
 let gameScene: PIXI.Container | null = null
+let weatherContainer: PIXI.Container | null = null
 let selectionGraphics: PIXI.Graphics | null = null
 let tooltipContainer: PIXI.Container | null = null
 let tooltipBg: PIXI.Graphics | null = null
 let tooltipText: PIXI.Text | null = null
+
+const weatherParticles: WeatherParticle[] = []
+let lightningTimer = 0
+let cloudTimer = 0
 
 const keysPressed: { [key: string]: boolean } = {}
 const speed = computed(() => gameStore.isExhausted ? 1.5 : 3)
@@ -198,6 +211,54 @@ const initPixi = async () => {
   selectionGraphics.zIndex = 9999
   gameScene.addChild(selectionGraphics)
 
+  // Weather Container
+  weatherContainer = new PIXI.Container()
+  weatherContainer.zIndex = 25000 // Below Darkness, above Game
+  // Note: Darkness is 30000. UI Tooltip is 20000 (Wait, tooltip is 20000, Darkness is 30000).
+  // Let's adjust Z-Indices.
+  // GameScene: Default
+  // Darkness: 30000
+  // Weather: 25000 (Above Tooltip? No, Tooltip should be highest)
+  // Let's make Tooltip 40000.
+
+  // Current Z:
+  // Game objects: Y-sort
+  // Selection: 9999
+  // Overlay (Day/Night): 10000 (Wait, line 224 says 10000)
+  // Darkness Overlay (line 208): 30000
+  // Tooltip: 20000
+
+  // Revised Z:
+  // Game Objects: 0-10000
+  // Overlay: 15000
+  // Weather: 20000
+  // Darkness: 25000
+  // Flash: 26000
+  // Tooltip: 30000
+
+  weatherContainer.zIndex = 20000
+  app.stage.addChild(weatherContainer)
+
+  // Darkness Overlay (Day/Night Cycle)
+  const darknessOverlay = new PIXI.Graphics()
+  darknessOverlay.name = 'darkness'
+  darknessOverlay.beginFill(0x000033) // Dark Blue
+  darknessOverlay.drawRect(0, 0, 10000, 10000) // Cover everything (huge size)
+  darknessOverlay.endFill()
+  darknessOverlay.alpha = 0
+  darknessOverlay.zIndex = 25000
+  app.stage.addChild(darknessOverlay)
+
+  // Flash Overlay (Lightning)
+  const flashOverlay = new PIXI.Graphics()
+  flashOverlay.name = 'flash'
+  flashOverlay.beginFill(0xFFFFFF)
+  flashOverlay.drawRect(0, 0, 10000, 10000)
+  flashOverlay.endFill()
+  flashOverlay.alpha = 0
+  flashOverlay.zIndex = 26000
+  app.stage.addChild(flashOverlay)
+
   // Day/Night Overlay
   const overlay = new PIXI.Graphics()
   overlay.beginFill(0xFFFFFF) // White base for tinting
@@ -205,12 +266,12 @@ const initPixi = async () => {
   overlay.endFill()
   overlay.alpha = 0
   overlay.tint = 0x000000
-  overlay.zIndex = 10000
+  overlay.zIndex = 15000
   app.stage.addChild(overlay)
 
   // Tooltip
   tooltipContainer = new PIXI.Container()
-  tooltipContainer.zIndex = 20000
+  tooltipContainer.zIndex = 30000
   tooltipContainer.visible = false
 
   tooltipBg = new PIXI.Graphics()
@@ -589,11 +650,19 @@ const renderPlot = (c: PlotContainer, plot: Plot) => {
         case 'floor_light': ground.texture = tm.getTexture('floor_light'); break;
         case 'grass':
         default:
+            const season = gameStore.gameState.currentSeason
             // Random variations based on position
             const seed = (plot.x * 37 + plot.y * 13) % 100
-            if (seed < 5) ground.texture = tm.getTexture('flower_red')
-            else if (seed < 10) ground.texture = tm.getTexture('flower_yellow')
-            else ground.texture = tm.getTexture('grass');
+
+            if (season === 'winter') {
+                 ground.texture = tm.getTexture('snow')
+            } else if (season === 'autumn') {
+                 ground.texture = tm.getTexture('grass_autumn')
+            } else {
+                 if (seed < 5) ground.texture = tm.getTexture('flower_red')
+                 else if (seed < 10) ground.texture = tm.getTexture('flower_yellow')
+                 else ground.texture = tm.getTexture('grass')
+            }
             break;
       }
   }
@@ -753,6 +822,77 @@ const createPlayer = () => {
   gameScene?.addChild(p)
 }
 
+interface MonsterContainer extends PIXI.Container {
+  monsterId: string
+}
+
+const renderMonsters = () => {
+    if (!gameScene) return
+    const monsters = gameStore.gameState.monsters
+
+    // 1. Remove
+    const childrenToRemove: MonsterContainer[] = []
+    gameScene.children.forEach(child => {
+        const c = child as MonsterContainer
+        if (c.monsterId) {
+            const exists = monsters.find(m => m.id === c.monsterId)
+            if (!exists) childrenToRemove.push(c)
+        }
+    })
+    childrenToRemove.forEach(c => gameScene!.removeChild(c))
+
+    // 2. Add/Update
+    monsters.forEach(monster => {
+        let c = gameScene!.children.find(child => (child as MonsterContainer).monsterId === monster.id) as MonsterContainer
+
+        if (!c) {
+            c = new PIXI.Container() as MonsterContainer
+            c.monsterId = monster.id
+
+            const s = new PIXI.Sprite()
+            s.name = 'sprite'
+            s.width = TILE_SIZE
+            s.height = TILE_SIZE
+            // Center anchor for rotation/flip if needed, but TILE_SIZE usually 0,0 top-left in this engine?
+            // Player sprite uses TILE_SIZE width/height but anchor default (0,0).
+
+            c.addChild(s)
+            addShadow(c)
+            gameScene!.addChild(c)
+        }
+
+        const s = c.getChildByName('sprite') as PIXI.Sprite
+        if (s) {
+            // Texture
+            let texName: string = monster.type
+            if (monster.type === 'slime') {
+                texName = 'slime_down' // Default
+                // Animation frame?
+                if (Math.floor(frameTick.value / 10) % 2 === 0) texName = 'slime_down_2'
+            }
+
+            const tex = TextureManager.getInstance().getTexture(texName)
+            // Fallback to simple colored square if no texture
+            if (tex === PIXI.Texture.WHITE) {
+                s.texture = PIXI.Texture.WHITE
+                s.tint = 0x00FF00 // Slime Green
+            } else {
+                s.texture = tex
+                s.tint = 0xFFFFFF
+            }
+
+            // Damage flash
+            if (monster.cooldown && monster.cooldown > 50) {
+                 s.tint = 0xFF0000
+            }
+        }
+
+        c.x = monster.x * TILE_SIZE
+        c.y = monster.y * TILE_SIZE
+        c.zIndex = c.y // Y-sort
+    })
+}
+
 const handleKeyDown = (e: KeyboardEvent) => {
   keysPressed[e.code] = true
 
@@ -765,18 +905,18 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (e.code.startsWith('Digit') && e.code !== 'Digit0') {
       const idx = parseInt(e.code.replace('Digit', '')) - 1
       const tools = gameStore.gameState.inventory.slice(0, 12)
-      if (idx >= 0 && idx < tools.length) {
+      if (idx >= 0 && idx < tools.length && tools[idx]) {
           gameStore.setSelectedTool(tools[idx].id)
       }
   } else if (e.code === 'Digit0') {
       const tools = gameStore.gameState.inventory.slice(0, 12)
-      if (tools.length >= 10) gameStore.setSelectedTool(tools[9].id)
+      if (tools.length >= 10 && tools[9]) gameStore.setSelectedTool(tools[9].id)
   } else if (e.code === 'Minus') {
       const tools = gameStore.gameState.inventory.slice(0, 12)
-      if (tools.length >= 11) gameStore.setSelectedTool(tools[10].id)
+      if (tools.length >= 11 && tools[10]) gameStore.setSelectedTool(tools[10].id)
   } else if (e.code === 'Equal') {
       const tools = gameStore.gameState.inventory.slice(0, 12)
-      if (tools.length >= 12) gameStore.setSelectedTool(tools[11].id)
+      if (tools.length >= 12 && tools[11]) gameStore.setSelectedTool(tools[11].id)
   }
 }
 
@@ -815,6 +955,20 @@ const handleMouseMove = (e: MouseEvent) => {
     // Hover Detection
     type TargetType = { type: 'npc' | 'object' | 'animal' | 'crop', name: string, action?: string }
     let target: TargetType | null = null
+
+    // Distance Check
+    const player = gameStore.gameState.player
+    // Use center of player tile (player.x + 0.5) to center of target tile (gridX + 0.5)
+    const dx = (gridX + 0.5) - (player.x + 0.5)
+    const dy = (gridY + 0.5) - (player.y + 0.5)
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    let maxRange = 1.5
+    if (gameStore.gameState.selectedTool === 'fishing_rod') {
+        maxRange = 5.0
+    }
+
+    const inRange = dist <= maxRange
 
     // 1. NPC
     const hoveredNPC = gameStore.gameState.npcs.find(npc =>
@@ -858,11 +1012,32 @@ const handleMouseMove = (e: MouseEvent) => {
         }
     }
 
+    // 4. Monster
+    if (!target) {
+        const hoveredMonster = gameStore.gameState.monsters.find(m =>
+            Math.round(m.x) === gridX && Math.round(m.y) === gridY &&
+            gameStore.gameState.location === 'mine'
+        )
+        if (hoveredMonster) {
+            target = { type: 'npc', name: hoveredMonster.name, action: '攻击' }
+        }
+    }
+
     // Update store
+    // Only show interaction target if in range?
+    // Stardew: You can see info but cursor changes.
+    // For now, let's keep hoveredTarget but handle click check.
     gameStore.hoveredTarget = target
 
-    if (target) {
+    if (!inRange) {
+        selectionGraphics.tint = 0xFF0000 // Red
+        selectionGraphics.alpha = 0.5
+    } else if (target) {
         selectionGraphics.tint = 0x00FF00
+        selectionGraphics.alpha = 1
+    } else {
+        selectionGraphics.tint = 0xFFFFFF
+        selectionGraphics.alpha = 1
     }
 
     // Tooltip Update
@@ -906,10 +1081,26 @@ const handleMouseMove = (e: MouseEvent) => {
 
 const handleMouseDown = () => {
   if (selectedPlotCoords) {
+    // Range Check
+    const player = gameStore.gameState.player
+    const dx = (selectedPlotCoords.x + 0.5) - (player.x + 0.5)
+    const dy = (selectedPlotCoords.y + 0.5) - (player.y + 0.5)
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    let maxRange = 1.5
+    if (gameStore.gameState.selectedTool === 'fishing_rod') {
+        maxRange = 5.0
+    }
+
+    if (dist > maxRange) {
+        return
+    }
+
     // Visual Feedback
     spawnParticles(
         selectedPlotCoords.x * TILE_SIZE + TILE_SIZE/2,
         selectedPlotCoords.y * TILE_SIZE + TILE_SIZE/2,
+        'cursor',
         0xFFFFFF,
         8
     )
@@ -986,28 +1177,62 @@ interface Particle {
   vx: number
   vy: number
   life: number
+  gravity: number
+  lifeDecay: number
 }
 const particles: Particle[] = []
 
-const spawnParticles = (x: number, y: number, color: number, count: number = 5) => {
+const spawnParticles = (x: number, y: number, type: string, color: number, count: number = 5) => {
   if (!gameScene) return
   for (let i = 0; i < count; i++) {
     const s = new PIXI.Sprite(PIXI.Texture.WHITE)
     s.width = 4
     s.height = 4
+
+    let gravity = 0.2
+    let lifeDecay = 0.05
+    let speed = Math.random() * 2 + 1
+    let vyOffset = 0
+
+    if (type === 'leaf') {
+        s.width = 6
+        s.height = 4
+        gravity = 0.05
+        lifeDecay = 0.02
+        speed = Math.random() * 1 + 0.5
+    } else if (type === 'wood') {
+        s.width = 6
+        s.height = 3
+        gravity = 0.3
+        vyOffset = -3
+    } else if (type === 'stone') {
+        s.width = 4
+        s.height = 4
+        gravity = 0.3
+        vyOffset = -3
+    } else if (type === 'water') {
+        s.width = 3
+        s.height = 3
+        gravity = 0.3
+        vyOffset = -2
+    }
+
     s.tint = color
     s.x = x
     s.y = y
+    s.anchor.set(0.5)
     s.zIndex = 20000 // Top
     gameScene.addChild(s)
 
     const angle = Math.random() * Math.PI * 2
-    const speed = Math.random() * 2 + 1
+
     particles.push({
       sprite: s,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 1.0
+      vy: Math.sin(angle) * speed + vyOffset,
+      life: 1.0,
+      gravity,
+      lifeDecay
     })
   }
 }
@@ -1015,10 +1240,20 @@ const spawnParticles = (x: number, y: number, color: number, count: number = 5) 
 const updateParticles = () => {
    for (let i = particles.length - 1; i >= 0; i--) {
      const p = particles[i]
+     if (!p) continue
+
+     p.vy += p.gravity
+     p.vx *= 0.95 // Friction
+
      p.sprite.x += p.vx
      p.sprite.y += p.vy
-     p.life -= 0.05
+     p.sprite.rotation += p.vx * 0.2
+
+     p.life -= p.lifeDecay
      p.sprite.alpha = p.life
+
+     // Ground collision (approximate)
+     // if (p.sprite.y > ... ) // Hard to know ground level here without context, assume purely visual decay
 
      if (p.life <= 0) {
        gameScene?.removeChild(p.sprite)
@@ -1027,14 +1262,187 @@ const updateParticles = () => {
    }
 }
 
+// Watch for particle events
+watch(() => gameStore.gameState.particleEvents, (events) => {
+    if (events.length > 0) {
+        events.forEach(e => {
+            spawnParticles(
+                e.x * TILE_SIZE + TILE_SIZE/2,
+                e.y * TILE_SIZE + TILE_SIZE/2,
+                e.type,
+                e.color || 0xFFFFFF,
+                e.count || 5
+            )
+        })
+        // Clear events
+        gameStore.gameState.particleEvents.length = 0
+    }
+}, { deep: true })
+
+
+const updateWeather = () => {
+   if (!weatherContainer || !app) return
+
+   const weather = gameStore.gameState.weather
+   const width = app.screen.width
+   const height = app.screen.height
+
+   // Spawn Particles
+   if (weather === 'rainy' || weather === 'storm') {
+       // Rain
+       if (weatherParticles.length < 500) { // Limit count
+           const spawnCount = 5
+           for(let i=0; i<spawnCount; i++) {
+               const g = new PIXI.Graphics()
+               g.beginFill(0x8888FF)
+               g.drawRect(0,0, 2, 10)
+               g.endFill()
+               g.x = Math.random() * width + Math.random() * 400 - 200 // Spread wide for wind
+               g.y = -20
+               g.alpha = 0.6
+               weatherContainer.addChild(g)
+               weatherParticles.push({
+                   sprite: g,
+                   vx: -2 + Math.random(), // Slight wind left
+                   vy: 10 + Math.random() * 5, // Fast fall
+                   life: 1,
+                   type: 'rain'
+               })
+           }
+       }
+   } else if (weather === 'snow') {
+       // Snow
+       if (weatherParticles.length < 300) {
+           const spawnCount = 2
+           for(let i=0; i<spawnCount; i++) {
+               const g = new PIXI.Graphics()
+               g.beginFill(0xFFFFFF)
+               g.drawCircle(0,0, 3)
+               g.endFill()
+               g.x = Math.random() * width
+               g.y = -10
+               g.alpha = 0.8
+               weatherContainer.addChild(g)
+               weatherParticles.push({
+                   sprite: g,
+                   vx: Math.random() * 2 - 1, // Drift
+                   vy: 2 + Math.random() * 2, // Slow fall
+                   life: 1,
+                   type: 'snow'
+               })
+           }
+       }
+   } else if (weather === 'cloudy') {
+       // Cloud Shadows
+       if (cloudTimer > 0) {
+           cloudTimer--
+       } else {
+           cloudTimer = 300 // Spawn every ~5 seconds
+
+           const g = new PIXI.Graphics()
+           g.beginFill(0x000000)
+           // Draw a blob (multiple ellipses)
+           g.drawEllipse(0, 0, 120, 60)
+           g.drawEllipse(60, 20, 100, 50)
+           g.drawEllipse(-60, 20, 100, 50)
+           g.endFill()
+
+           g.x = -250
+           g.y = Math.random() * height
+           g.alpha = 0.15 // Faint shadow
+           // Random scale
+           const scale = 0.5 + Math.random() * 1.5
+           g.scale.set(scale)
+
+           weatherContainer.addChild(g)
+           weatherParticles.push({
+               sprite: g,
+               vx: 0.5 + Math.random() * 0.5, // Slow wind right
+               vy: 0,
+               life: 1,
+               type: 'cloud'
+           })
+       }
+   }
+
+   // Lightning (Storm only)
+   if (weather === 'storm') {
+       if (lightningTimer > 0) {
+           lightningTimer--
+           // Flash effect
+           const flash = app.stage.getChildByName('flash') as PIXI.Graphics
+           if (flash) {
+               flash.alpha = lightningTimer / 10 // Fade out
+           }
+       } else if (Math.random() < 0.005) { // 0.5% chance per frame
+           lightningTimer = 20 // 20 frames flash
+       }
+   }
+
+   // Update Existing Particles
+    for (let i = weatherParticles.length - 1; i >= 0; i--) {
+        const p = weatherParticles[i]
+        if (!p) continue
+
+        p.sprite.x += p.vx
+        p.sprite.y += p.vy
+
+        if (p.type === 'snow') {
+            p.sprite.x += Math.sin(frameTick.value / 20) * 0.5 // Wave drift
+        }
+
+        // Remove if out of bounds
+        // Clouds need wider bounds
+        const boundBuffer = p.type === 'cloud' ? 400 : 200
+
+        if (p.sprite.y > height + boundBuffer || p.sprite.x < -boundBuffer || p.sprite.x > width + boundBuffer) {
+            weatherContainer.removeChild(p.sprite)
+            weatherParticles.splice(i, 1)
+        }
+    }
+
+   // Clean up if weather changes
+   if (weather === 'sunny') {
+       if (weatherParticles.length > 0) {
+            weatherParticles.forEach(p => weatherContainer?.removeChild(p.sprite))
+            weatherParticles.length = 0
+       }
+   } else if (weather === 'cloudy') {
+        // Remove rain/snow immediately
+        for (let i = weatherParticles.length - 1; i >= 0; i--) {
+            const p = weatherParticles[i]
+            if (!p) continue
+            if (p.type !== 'cloud') {
+                weatherContainer.removeChild(p.sprite)
+                weatherParticles.splice(i, 1)
+            }
+        }
+    } else {
+        // Remove clouds immediately if raining/snowing?
+        // Let's keep them mixed or remove them.
+        // Usually rain comes from clouds, but these are shadows.
+        // Let's remove cloud shadows during rain/storm/snow to avoid clutter
+        for (let i = weatherParticles.length - 1; i >= 0; i--) {
+            const p = weatherParticles[i]
+            if (!p) continue
+            if (p.type === 'cloud') {
+                weatherContainer.removeChild(p.sprite)
+                weatherParticles.splice(i, 1)
+            }
+        }
+    }
+}
+
 const gameLoop = () => {
   if (!gameScene || !app) return
 
   frameTick.value++
 
   updateParticles()
+  updateWeather()
 
   renderDroppedItems()
+  renderMonsters()
 
   const player = gameScene.children.find(c => (c as PlayerContainer).isPlayer) as PlayerContainer
   if (!player) return
@@ -1170,6 +1578,68 @@ const gameLoop = () => {
     if (a === selectionGraphics) return 1
     if (b === selectionGraphics) return 1
     return a.y - b.y
+  })
+
+  updateCulling()
+
+  // Update Darkness
+  if (app) {
+      const darkness = app.stage.getChildByName('darkness') as PIXI.Graphics
+      if (darkness) {
+          // Time: 6:00 (6.0) to 2:00 (26.0)
+          // Sunset starts at 18:00 (18.0) -> alpha 0 to 0.5 at 20:00 -> 0.7 at 24:00
+          const time = gameStore.gameState.gameTime
+          let alpha = 0
+          if (time >= 18) {
+              // 18.0 -> 0
+              // 20.0 -> 0.4
+              // 24.0 -> 0.6
+              alpha = Math.min(0.7, (time - 18) * 0.1)
+          } else if (time < 6) {
+              // Early morning (should ideally stay dark until 6)
+              // But game starts at 6.
+              // If we allow staying up past 24:00, time goes to 26.0
+              // 26.0 (2AM) -> 0.8
+              alpha = Math.min(0.8, (time - 18) * 0.1)
+          }
+
+          // Mine is always dark-ish?
+          if (gameStore.gameState.location === 'mine') {
+              alpha = Math.max(alpha, 0.6)
+          }
+
+          darkness.alpha = alpha
+          // Ensure it covers screen
+          darkness.width = app.screen.width
+          darkness.height = app.screen.height
+      }
+  }
+}
+
+const updateCulling = () => {
+  if (!gameScene || !app) return
+
+  // Viewport bounds in world coordinates
+  // pivot is the center of the screen in world coords
+  const halfWidth = (app.screen.width / 2) / gameScene.scale.x
+  const halfHeight = (app.screen.height / 2) / gameScene.scale.y
+
+  const minX = gameScene.pivot.x - halfWidth - TILE_SIZE * 2
+  const maxX = gameScene.pivot.x + halfWidth + TILE_SIZE * 2
+  const minY = gameScene.pivot.y - halfHeight - TILE_SIZE * 2
+  const maxY = gameScene.pivot.y + halfHeight + TILE_SIZE * 2
+
+  // Cull Plots
+  plotContainers.forEach(row => {
+    row.forEach(c => {
+       if (c.x >= minX && c.x <= maxX && c.y >= minY && c.y <= maxY) {
+         c.visible = true
+         // Only animate visible plots
+         // We could add logic here to stop animations for off-screen plots
+       } else {
+         c.visible = false
+       }
+    })
   })
 }
 
