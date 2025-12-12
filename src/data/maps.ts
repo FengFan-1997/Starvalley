@@ -129,6 +129,10 @@ const createMapFromLayout = (
           terrain = 'grass'
           object = { type: 'weed', id: `weed_${x}_${y}`, hp: 1 }
           break
+        case 'J':
+          terrain = 'grass'
+          object = { type: 'iron_node', id: `joja_${x}_${y}`, hp: 999 } // Industrial look
+          break
         case '.':
         default:
           terrain = 'grass'
@@ -291,10 +295,10 @@ const TOWN_LAYOUT = [
   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
   "TT....................................TT",
   "TT....................................TT",
-  "TT...SSSSS.SSSSSSS..SSSSSSS...........TT",
-  "TT...S...S.S.....S..S.....S...........TT",
-  "TT...S...S.S.....S..S.....S...........TT",
-  "TT...SSSSS.SSSSSSS..SSSSSSS...........TT",
+  "TT...SSSSS.SSSSSSS..SSSSSSS..JJJJJJJ..TT",
+  "TT...S...S.S.....S..S.....S..J.....J..TT",
+  "TT...S...S.S.....S..S.....S..J.....J..TT",
+  "TT...SSSSS.SSSSSSS..SSSSSSS..JJJJJJJ..TT",
   "TT....................................TT",
   "TT....................................TT",
   "TT====================================TT",
@@ -550,6 +554,17 @@ export const MAPS: Record<string, MapConfig> = {
     ],
     buildings: [],
     generatePlots: () => createMapFromLayout(RANCH_LAYOUT, 0)
+  },
+  // 3.6 JOJA MART
+  joja_mart: {
+    id: 'joja_mart',
+    width: 20,
+    height: 10,
+    teleports: [
+      { x: 9, y: 8, targetMap: 'town', targetX: 25, targetY: 5 } // Placeholder exit
+    ],
+    buildings: [],
+    generatePlots: () => createMapFromLayout(JOJA_MART_LAYOUT, 0)
   },
   // 4. MOUNTAIN
   mountain: {

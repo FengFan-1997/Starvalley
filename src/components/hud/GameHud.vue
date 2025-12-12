@@ -11,12 +11,13 @@
         <div class="date-section">
           <div class="date-text">{{ gameDay }}</div>
           <div class="weather-icon-box">
-             <span class="season-icon">🌱</span>
-             <span class="weather-icon" v-if="gameStore.gameState.weather === 'sunny'">☀️</span>
-             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'rainy'">🌧️</span>
-             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'storm'">⛈️</span>
-             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'snow'">❄️</span>
-             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'cloudy'">☁️</span>
+             <span class="season-icon">{{ seasonIcon }}</span>
+             <img v-if="gameStore.gameState.weather === 'sunny'" :src="getIconUrl('icon_sun')" class="pixel-icon" />
+             <img v-else-if="gameStore.gameState.weather === 'rainy'" :src="getIconUrl('icon_rain')" class="pixel-icon" />
+             <img v-else-if="gameStore.gameState.weather === 'storm'" :src="getIconUrl('icon_storm')" class="pixel-icon" />
+             <img v-else-if="gameStore.gameState.weather === 'snow'" :src="getIconUrl('icon_snow')" class="pixel-icon" />
+             <img v-else-if="gameStore.gameState.weather === 'cloudy'" :src="getIconUrl('icon_cloudy')" class="pixel-icon" />
+             <span class="weather-icon" v-else-if="gameStore.gameState.weather === 'windy'">🍃</span>
           </div>
         </div>
         <div class="time-section">
@@ -32,7 +33,7 @@
 
       <!-- Quest Button -->
       <div class="quest-btn-container pixel-panel" @click="gameStore.isQuestLogOpen = !gameStore.isQuestLogOpen" title="任务日志">
-        <span class="quest-icon">📜</span>
+        <img :src="getIconUrl('icon_quest')" class="pixel-icon" />
         <span class="quest-alert" v-if="gameStore.gameState.quests.some(q => !q.completed && q.currentCount >= q.count)">!</span>
       </div>
 
@@ -107,11 +108,25 @@ import { useGameStore, type InventoryItem } from '@/stores/game'
 import FishingMinigame from '@/components/hud/FishingMinigame.vue'
 import ChestModal from '@/components/ChestModal.vue'
 import QuestLog from '@/components/hud/QuestLog.vue'
+import { TextureManager } from '@/utils/TextureManager'
 
 const gameStore = useGameStore()
 
+const getIconUrl = (key: string) => {
+  return TextureManager.getInstance().getDataUrl(key)
+}
+
 const gameTime = computed(() => gameStore.gameState.currentTime.split(' ')[1]) // "6:00"
 const gameDay = computed(() => gameStore.gameState.currentTime.split(' ')[0]) // "Spring 1"
+const seasonIcon = computed(() => {
+  switch (gameStore.gameState.currentSeason) {
+    case 'spring': return '🌸'
+    case 'summer': return '🌻'
+    case 'autumn': return '🍂'
+    case 'winter': return '☃️'
+    default: return '🌱'
+  }
+})
 const playerGold = computed(() => gameStore.playerGold)
 const playerEnergy = computed(() => gameStore.playerEnergy)
 const playerMaxEnergy = computed(() => gameStore.gameState.player.maxEnergy)

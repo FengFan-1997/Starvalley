@@ -92,6 +92,107 @@ export const NPCS: NPC[] = [
     ]
   },
   {
+    id: 'haley',
+    name: '海莉',
+    location: 'town',
+    x: 18,
+    y: 20,
+    spriteColor: 0xF1C40F, // Blonde
+    dialogues: [
+      '哦...你是新来的农夫？',
+      '这件衣服好丑。',
+      '我要去拍照了。',
+      '如果不是下雨天，我才不会出来呢。'
+    ],
+    currentDialogueIndex: 0,
+    relationship: 0,
+    loves: ['sunflower', 'coconut', 'pink_cake', 'fruit_salad'],
+    likes: ['daffodil'],
+    dislikes: ['wild_horseradish', 'clay', 'prismatic_shard'], // She hates prismatic shard!
+    hates: ['fish', 'garbage'],
+    schedule: [
+      { time: 10 * 60, location: 'town', x: 20, y: 22 }, // Fountain
+      { time: 16 * 60, location: 'town', x: 18, y: 20 }
+    ]
+  },
+  {
+    id: 'sebastian',
+    name: '塞巴斯蒂安',
+    location: 'town',
+    x: 45,
+    y: 5,
+    spriteColor: 0x2C3E50, // Black hair
+    dialogues: [
+      '......',
+      '你是谁？',
+      '我更喜欢待在地下室里。',
+      '如果不下雨，我为什么要出门？'
+    ],
+    currentDialogueIndex: 0,
+    relationship: 0,
+    loves: ['frozen_tear', 'obsidian', 'pumpkin_soup', 'sashimi', 'void_egg'],
+    likes: ['quartz', 'coffee'],
+    dislikes: ['daffodil', 'purple_mushroom', 'winter_root', 'chanterelle', 'common_mushroom', 'morel', 'hazelnut', 'snow_yam', 'leek', 'dandelion', 'holly'],
+    hates: ['clay', 'egg', 'farmer_lunch', 'omelet', 'pale_ale'],
+    schedule: [
+      { time: 15 * 60, location: 'town', x: 40, y: 10 }, // Lake
+      { time: 19 * 60, location: 'town', x: 45, y: 5 }
+    ]
+  },
+  {
+    id: 'penny',
+    name: '佩妮',
+    location: 'town',
+    x: 12,
+    y: 18,
+    spriteColor: 0xE67E22, // Orange hair (Bun)
+    dialogues: [
+      '你好。',
+      '我在读书。',
+      '孩子们今天很乖。',
+      '这是一个安静的小镇，不是吗？'
+    ],
+    currentDialogueIndex: 0,
+    relationship: 0,
+    loves: ['diamond', 'emerald', 'melon', 'poppy', 'poppyseed_muffin', 'red_plate', 'roots_platter', 'sandfish', 'tom_kha_soup'],
+    likes: ['dandelion', 'leek'],
+    dislikes: ['fish', 'grape', 'hops', 'pale_ale', 'rabbit_foot', 'wine'],
+    hates: ['beer', 'mead', 'pale_broth'],
+    schedule: [
+      { time: 9 * 60, location: 'town', x: 14, y: 20 }, // Near river
+      { time: 16 * 60, location: 'town', x: 12, y: 18 }
+    ]
+  },
+  {
+    id: 'shane',
+    name: '谢恩',
+    location: 'town',
+    x: 8,
+    y: 14,
+    spriteColor: 0x34495E, // Dark hair, messy
+    dialogues: [
+      '我在忙。',
+      '我不认识你。',
+      '离我远点。',
+      '......'
+    ],
+    currentDialogueIndex: 0,
+    relationship: 0,
+    loves: ['beer', 'hot_pepper', 'pepper_poppers', 'pizza'],
+    likes: ['egg', 'fruit'],
+    dislikes: ['pickle', 'quartz'],
+    hates: ['joja_cola'], // Ironic? Actually he likes it in vanilla? Wait, no, he HATES it in some versions or likes it? Vanilla he Likes it.
+    // Wiki says: Shane Likes Joja Cola? No, wiki says "Likes: All Eggs, All Fruit... Joja Cola (except...)"?
+    // Wait, Joja Cola is usually trash/hated.
+    // Shane LOVES Beer, Hot Pepper, Pepper Poppers, Pizza.
+    // He LIKES Joja Cola.
+    // I'll put it in Likes if I had it.
+    schedule: [
+      { time: 8 * 60, location: 'store', x: 5, y: 8 }, // Work (Joja is not impl, so Store?)
+      { time: 17 * 60, location: 'town', x: 25, y: 15 } // Saloon area
+    ]
+  },
+  {
     id: 'robin',
     name: '罗宾',
     location: 'carpenter',

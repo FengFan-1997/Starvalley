@@ -1,13 +1,31 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ITEMS, type ItemDefinition } from '@/data/items'
+import { CROPS } from '@/data/crops'
 import { CRAFTING_RECIPES } from '@/data/recipes'
 import { MACHINE_RECIPES } from '@/data/machines'
-import { MAPS } from '@/data/maps'
+import { MAPS, type Building } from '@/data/maps' // Added Building import
 import { NPCS, type NPC } from '@/data/npcs'
-import { MONSTERS, type MonsterDefinition } from '@/data/monsters'
+import { MONSTERS } from '@/data/monsters'
 import { SoundManager } from '@/utils/SoundManager'
 import { findPath } from '@/utils/Pathfinding'
+
+export interface Animal {
+    id: string
+    type: 'chicken' | 'cow' | 'sheep' | 'pig' | 'duck'
+    name: string
+    age: number // Days
+    friendship: number // 0-1000
+    happiness: number // 0-255
+    homeBuildingId: string
+    location: string // 'farm' or inside building
+    x: number
+    y: number
+    direction: 'left' | 'right'
+    fed: boolean
+    produceReady?: boolean // Made optional to match linter or just boolean
+    color: number
+}
 
 // Re-export for components using them
 export { ITEMS, type ItemDefinition } from '@/data/items'
@@ -24,6 +42,8 @@ export interface Player {
   maxHealth: number
   level: number
   experience: number
+  defense: number
+  immunity: number
   x: number
   y: number
   direction: 'up' | 'down' | 'left' | 'right'
@@ -110,6 +130,9 @@ export interface Plot {
     hp: number
     growthStage?: number
     treeType?: string
+    width?: number
+    height?: number
+    cropType?: string
     processing?: {
       output: string
       readyAt: number // Timestamp when ready
@@ -237,18 +260,42 @@ export interface GameState {
   player: Player
   plots: Plot[][]
   savedMaps: Record<string, Plot[][]>
+  buildings: Record<string, Building[]> // Added buildings (Key: Map ID)
   inventory: InventoryItem[]
   droppedItems: DroppedItem[]
   npcs: NPC[]
   animals: Animal[]
   monsters: Monster[] // Added monsters
   chestData: Record<string, InventoryItem[]> // Added chest storage
-  weather: 'sunny' | 'rainy' | 'cloudy' | 'storm' | 'snow'
+  weather: 'sunny' | 'rainy' | 'cloudy' | 'storm' | 'snow' | 'windy'
   visualEffects: VisualEffect[]
   particleEvents: ParticleEvent[]
   npcScheduleIndex: Record<string, number>
+  fishingState: FishingState
   events: GameEvent[]
   quests: Quest[]
+}
+
+export interface FishingState {
+  state: 'idle' | 'casting' | 'waiting' | 'bite' | 'reeling' | 'caught' | 'lost' | 'biting'
+  fishId?: string
+  treasure?: boolean
+  startTime?: number
+  difficulty?: number
+  behavior?: 'mixed' | 'smooth' | 'sinker' | 'floater' | 'dart'
+  timer?: number
+  // Minigame State
+  barPosition: number // 0-100
+  barHeight: number
+  barVelocity: number
+  fishPosition: number // 0-100
+  fishTargetPosition: number
+  fishMoveTimer: number
+  progress: number // 0-100
+  isHolding: boolean
+  treasurePosition: number
+  treasureProgress: number
+  treasureCollected: boolean
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -280,6 +327,8 @@ export const useGameStore = defineStore('game', () => {
       maxHealth: 100,
       level: 1,
       experience: 0,
+      defense: 0,
+      immunity: 0,
       x: 0,
       y: 0,
       direction: 'down',
@@ -308,6 +357,7 @@ export const useGameStore = defineStore('game', () => {
     },
     plots: [],
     savedMaps: {},
+    buildings: {}, // Initialize empty
     inventory: [
       { id: 'hoe', name: '锄头', type: 'tool', quantity: 1, icon: '🗡️', description: '用来耕地。' },
       { id: 'watering', name: '喷壶', type: 'tool', quantity: 1, icon: '💧', description: '用来浇水。', data: { water: 40, maxWater: 40 } },
@@ -320,27 +370,27 @@ export const useGameStore = defineStore('game', () => {
     ],
     droppedItems: [],
     npcs: JSON.parse(JSON.stringify(NPCS)),
-    animals: [
-       {
-         id: 'chicken_1',
-         type: 'chicken',
-         name: 'Coco',
-         age: 1,
-         friendship: 0,
-         mood: 150,
-         isFed: false,
-         hasPet: false,
-         location: 'farm',
-         x: 5,
-         y: 5
-       }
-    ],
+    animals: [],
     monsters: [],
     chestData: {},
     weather: 'sunny',
     visualEffects: [],
     particleEvents: [],
     npcScheduleIndex: {},
+    fishingState: {
+        state: 'idle',
+        barPosition: 0,
+        barHeight: 20,
+        barVelocity: 0,
+        fishPosition: 50,
+        fishTargetPosition: 50,
+        fishMoveTimer: 0,
+        progress: 0,
+        isHolding: false,
+        treasurePosition: 0,
+        treasureProgress: 0,
+        treasureCollected: false
+    },
     events: [
       {
         id: 'egg_festival',
@@ -374,6 +424,36 @@ export const useGameStore = defineStore('game', () => {
   // Crafting Recipes
   const craftingRecipes: CraftingRecipe[] = CRAFTING_RECIPES
 
+
+  const addAnimal = (type: Animal['type'], name: string, homeBuildingId: string) => {
+    // Find building to get location
+    let spawnX = 10
+    let spawnY = 10
+    const farmBuildings = gameState.value.buildings['farm'] || []
+    const home = farmBuildings.find(b => b.id === homeBuildingId)
+    if (home) {
+        spawnX = home.doorX || home.x
+        spawnY = home.doorY || home.y
+    }
+
+    gameState.value.animals.push({
+        id: `${type}_${Date.now()}`,
+        type,
+        name,
+        age: 0,
+        friendship: 0,
+        happiness: 255,
+        homeBuildingId,
+        location: 'farm', // Or inside? For now farm.
+        x: spawnX,
+        y: spawnY,
+        direction: 'left',
+        fed: false,
+        produceReady: false,
+        color: 0xFFFFFF
+    } as Animal)
+    console.log(`Added animal: ${name} (${type})`)
+  }
 
   // Actions
   const MAX_INVENTORY_SLOTS = 36
@@ -609,6 +689,10 @@ export const useGameStore = defineStore('game', () => {
   const isExhausted = computed(() => gameState.value.player.energy <= 0)
   const selectedTool = computed(() => gameState.value.selectedTool)
 
+  const isRaining = computed(() => gameState.value.weather === 'rainy' || gameState.value.weather === 'storm')
+  const isSnowing = computed(() => gameState.value.weather === 'snow')
+  const isDebrisWeather = computed(() => gameState.value.weather === 'windy') // For petals/leaves
+
   // Dialogue State
   const dialogueState = ref({
     isOpen: false,
@@ -656,6 +740,16 @@ export const useGameStore = defineStore('game', () => {
   const initializeGame = () => {
     console.log('Initializing game...')
     if (!loadGame()) {
+      // Load initial buildings from static MAPS
+      Object.keys(MAPS).forEach(mapId => {
+          const mapConfig = MAPS[mapId]
+          if (mapConfig && mapConfig.buildings) {
+              gameState.value.buildings[mapId] = [...mapConfig.buildings]
+          } else {
+              gameState.value.buildings[mapId] = []
+          }
+      })
+
       initializePlots()
 
       // Add Intro Quest
@@ -1052,12 +1146,118 @@ export const useGameStore = defineStore('game', () => {
       SoundManager.getInstance().play('sword_swing')
   }
 
+  const updateFishing = () => {
+      const fs = gameState.value.fishingState
+      if (fs.state !== 'reeling') return
+
+      // 1. Fish Movement
+      fs.fishMoveTimer -= 1
+      if (fs.fishMoveTimer <= 0) {
+          // Pick new target
+          let moveChance = 0.5
+          if (fs.behavior === 'dart') moveChance = 0.8
+          if (fs.behavior === 'smooth') moveChance = 0.2
+
+          if (Math.random() < moveChance) {
+               let range = 30
+               if (fs.behavior === 'dart') range = 60
+               if (fs.behavior === 'sinker') range = 20
+
+               let target = fs.fishPosition + (Math.random() * range * 2 - range)
+
+               // Sinker tends to go down
+               if (fs.behavior === 'sinker') target += 10
+               // Floater tends to go up
+               if (fs.behavior === 'floater') target -= 10
+
+               fs.fishTargetPosition = Math.max(0, Math.min(100, target))
+
+               // Speed depends on difficulty
+               fs.fishMoveTimer = Math.max(10, 60 - (fs.difficulty || 30))
+          } else {
+               fs.fishMoveTimer = 20
+          }
+      }
+
+      // Move fish towards target
+      const speed = (fs.difficulty || 30) / 20
+      if (fs.fishPosition < fs.fishTargetPosition) {
+          fs.fishPosition = Math.min(fs.fishTargetPosition, fs.fishPosition + speed)
+      } else {
+          fs.fishPosition = Math.max(fs.fishTargetPosition, fs.fishPosition - speed)
+      }
+
+      // 2. Bar Movement (Physics)
+      // Gravity
+      fs.barVelocity += 0.2
+      // User input (handled in GameCanvas via mouse/key events affecting barVelocity)
+      // Note: We need a way for input to affect this.
+      // We'll add a boolean 'isReeling' to fishingState or check mouse button status.
+      // Actually, better to expose an action 'reel()' that applies upward force.
+
+      fs.barPosition += fs.barVelocity
+
+      // Bounce/Stop at bounds
+      if (fs.barPosition < 0) {
+          fs.barPosition = 0
+          fs.barVelocity = 0 // Stop
+          // Small bounce?
+          // fs.barVelocity = -fs.barVelocity * 0.5
+      }
+      if (fs.barPosition > 100 - fs.barHeight) {
+          fs.barPosition = 100 - fs.barHeight
+          fs.barVelocity = 0
+      }
+
+      // 3. Progress
+      const fishCenter = fs.fishPosition
+      const barTop = fs.barPosition
+      const barBottom = fs.barPosition + fs.barHeight
+
+      if (fishCenter >= barTop && fishCenter <= barBottom) {
+          // Catching
+          fs.progress += 0.4
+          if (fs.progress >= 100) {
+              fs.state = 'caught'
+              SoundManager.getInstance().play('success')
+              // Determine fish quality/size?
+              // Add to inventory
+              if (fs.fishId) {
+                  addToInventory({ id: fs.fishId, quantity: 1 })
+                  addVisualEffect(gameState.value.player.x, gameState.value.player.y, '钓到了!', 0x00FF00)
+
+                  // XP
+                  gameState.value.player.skills.fishingExp += (fs.difficulty || 10)
+              }
+              gameState.value.fishingState.state = 'idle'
+          }
+      } else {
+          // Losing
+          fs.progress -= 0.3
+          if (fs.progress <= 0) {
+              fs.state = 'lost'
+              SoundManager.getInstance().play('fish_escape')
+              addVisualEffect(gameState.value.player.x, gameState.value.player.y, '跑掉了...', 0xFF0000)
+              gameState.value.fishingState.state = 'idle'
+          }
+      }
+  }
+
+  // Reel action (called by UI)
+  const reel = () => {
+      if (gameState.value.fishingState.state === 'reeling') {
+          gameState.value.fishingState.barVelocity -= 0.5 // Upward force
+          if (gameState.value.fishingState.barVelocity < -5) gameState.value.fishingState.barVelocity = -5
+      }
+  }
+
   // Game loop
   const startGameLoop = () => {
     if (gameLoopIntervalId !== null) return
 
     gameLoopIntervalId = window.setInterval(() => {
       updateGameTime()
+      updateFishing()
       updateNPCMovements()
       updateAnimals()
       updateMonsters() // Added monster update
@@ -1170,7 +1370,10 @@ export const useGameStore = defineStore('game', () => {
     const totalMinutes = Math.floor(gameState.value.gameTime * 60)
     updateNPCSchedules(totalMinutes)
     const hour = Math.floor(totalMinutes / 60) % 24
-    const minute = totalMinutes % 60
+    let minute = totalMinutes % 60
+
+    // Snap minute to 10s for Stardew style
+    minute = Math.floor(minute / 10) * 10
 
     // Update Machines (Check every 10 minutes)
     if (minute % 10 === 0) {
@@ -1215,32 +1418,6 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
-  // Spawn daily resources
-  const spawnDailyResources = () => {
-    // Only spawn on farm for now
-    // Logic: check savedMaps['farm'] or current plots if location is farm
-    let plots = gameState.value.savedMaps['farm']
-    if (gameState.value.location === 'farm') {
-        plots = gameState.value.plots
-    }
-
-    if (!plots) return
-
-    plots.forEach(row => {
-        row.forEach(plot => {
-            // 1% chance to spawn debris on empty grass
-            if (plot.terrain === 'grass' && !plot.object && !plot.hasCrop && !plot.isTilled) {
-                if (Math.random() < 0.01) {
-                    const r = Math.random()
-                    if (r < 0.5) plot.object = { type: 'weed', id: `weed_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
-                    else if (r < 0.75) plot.object = { type: 'wood', id: `twig_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
-                    else plot.object = { type: 'stone', id: `stone_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
-                }
-            }
-        })
-    })
-  }
-
   // Check for events
   const checkEvents = (triggerType: 'day_start' | 'location_enter' | 'npc_interact', context?: { npcId?: string, location?: string }) => {
     gameState.value.events.forEach(event => {
@@ -1280,42 +1457,21 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
-  // Process new day logic
-  // Check if a plot is valid for dropping items/walking (simplified)
-  const isValidDropLocation = (x: number, y: number): boolean => {
-      // 1. Check bounds
-      if (y < 0 || y >= gameState.value.plots.length) return false
-      const row = gameState.value.plots[y]
-      if (!row || x < 0 || x >= row.length) return false
-      const plot = row[x]
-      if (!plot) return false
-
-      // 2. Check terrain
-      if (plot.terrain === 'water') return false
-
-      // 3. Check objects (stone, wood, fence, etc.)
-      if (plot.object) return false // Don't drop inside a stone
-
-      // 4. Check buildings
-      const mapConfig = MAPS[gameState.value.location]
-      if (mapConfig && mapConfig.buildings) {
-          for (const b of mapConfig.buildings) {
-               // Check if inside building footprint
-               if (x >= b.x && x < b.x + b.width &&
-                   y >= b.y && y < b.y + b.height) {
-                   return false
-               }
-          }
-      }
-
-      return true
-  }
-
   const processNewDay = () => {
+    // 1. Reset Time
     gameState.value.gameTime = 6 // Wake up at 6:00 AM
     gameState.value.currentDay++
 
-    // Check for season change
+    // Adjust machine processing times for the new day
+    gameState.value.plots.forEach(row => {
+      row.forEach(plot => {
+        if (plot.object && plot.object.processing) {
+          plot.object.processing.readyAt -= 24
+        }
+      })
+    })
+
+    // 2. Season Logic
     let seasonChanged = false
     if (gameState.value.currentDay > 28) {
       gameState.value.currentDay = 1
@@ -1335,7 +1491,7 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    // Determine Weather
+    // 3. Weather Logic
     const isFestival = gameState.value.events.some(e =>
         e.type === 'festival' &&
         e.trigger.season === gameState.value.currentSeason &&
@@ -1347,40 +1503,54 @@ export const useGameStore = defineStore('game', () => {
     } else {
         const r = Math.random()
         const season = gameState.value.currentSeason
+        const day = gameState.value.currentDay
 
-        if (season === 'spring') {
-            gameState.value.weather = r < 0.18 ? 'rainy' : 'sunny'
+        // Specific weather patterns (Stardew-like)
+        if (season === 'summer' && (day === 13 || day === 26)) {
+             gameState.value.weather = 'storm' // Guaranteed storm days
+        } else if (season === 'spring') {
+            if (r < 0.18) gameState.value.weather = 'rainy'
+            else if (r < 0.25) gameState.value.weather = 'windy' // Petals
+            else if (r < 0.4) gameState.value.weather = 'cloudy'
+            else gameState.value.weather = 'sunny'
         } else if (season === 'summer') {
             if (r < 0.05) gameState.value.weather = 'storm'
             else if (r < 0.15) gameState.value.weather = 'rainy'
+            else if (r < 0.25) gameState.value.weather = 'cloudy'
             else gameState.value.weather = 'sunny'
         } else if (season === 'autumn') {
-             gameState.value.weather = r < 0.15 ? 'rainy' : 'sunny'
+            if (r < 0.15) gameState.value.weather = 'rainy'
+            else if (r < 0.3) gameState.value.weather = 'windy' // Falling leaves
+            else if (r < 0.4) gameState.value.weather = 'cloudy'
+            else gameState.value.weather = 'sunny'
         } else if (season === 'winter') {
-             gameState.value.weather = r < 0.2 ? 'snow' : 'sunny'
+            if (r < 0.2) gameState.value.weather = 'snow'
+            else if (r < 0.4) gameState.value.weather = 'cloudy'
+            else gameState.value.weather = 'sunny'
         }
     }
 
-    // Restore energy
-    gameState.value.player.energy = gameState.value.player.maxEnergy
+    // 4. Player Status
+    // If exhausted, only restore 50% energy
+    if (gameState.value.player.energy <= 0) {
+        gameState.value.player.energy = Math.floor(gameState.value.player.maxEnergy * 0.5)
+        addVisualEffect(gameState.value.player.x, gameState.value.player.y, '休息不足...', 0xCCCCCC)
+    } else {
+        gameState.value.player.energy = gameState.value.player.maxEnergy
+    }
 
-    // Reset NPC schedules and flags
+    // 5. Reset Daily Flags
     gameState.value.npcScheduleIndex = {}
     gameState.value.npcs.forEach(npc => {
         npc.talkedToday = false
+        npc.giftedToday = false
     })
 
-    // Spawn resources
-    spawnDailyResources()
-
-    // Check day start events
-    checkEvents('day_start')
-
-    // Update Animals
+    // 6. Update Animals (Friendship, Mood, Produce)
     gameState.value.animals.forEach(animal => {
-        // Reset daily flags
-        animal.hasPet = false
+        animal.hasPet = false // Reset pet flag
 
+        // Friendship/Mood mechanics
         if (animal.isFed) {
             animal.friendship = Math.min(1000, animal.friendship + 5)
             animal.mood = Math.min(255, animal.mood + 10)
@@ -1389,154 +1559,234 @@ export const useGameStore = defineStore('game', () => {
             animal.mood = Math.max(0, animal.mood - 20)
         }
 
-        // Produce
-        if (animal.age > 3 && animal.isFed) { // Adult and fed
+        // Produce Logic
+        if (animal.age > 3 && animal.isFed) {
             animal.produceReady = true
-            if (animal.type === 'chicken' || animal.type === 'duck') {
-                 const range = 1
-
-                 // Try to find a valid spot around the animal
-                 const offsets = []
-                 for (let dy = -range; dy <= range; dy++) {
-                     for (let dx = -range; dx <= range; dx++) {
-                         offsets.push({dx, dy})
-                     }
+            // Attempt to drop product if animal is in a loaded map (or just drop it where they are)
+            // We can drop it even if map not loaded, it will be there when player visits.
+            // Check valid drop location around animal
+            const range = 1
+            const offsets = []
+            for (let dy = -range; dy <= range; dy++) {
+                 for (let dx = -range; dx <= range; dx++) {
+                     offsets.push({dx, dy})
                  }
-                 // Simple shuffle to randomize drop location
-                 offsets.sort(() => Math.random() - 0.5)
+            }
+            offsets.sort(() => Math.random() - 0.5)
 
+            let dropped = false
+            // We need to access the map where the animal is
+            let animalMapPlots = gameState.value.savedMaps[animal.location]
+            if (gameState.value.location === animal.location) {
+                animalMapPlots = gameState.value.plots
+            }
+
+            if (animalMapPlots) {
                  for (const offset of offsets) {
                      const tx = Math.round(animal.x) + offset.dx
                      const ty = Math.round(animal.y) + offset.dy
 
-                     if (isValidDropLocation(tx, ty)) {
-                         const produceId = animal.type === 'chicken' ? 'egg' : 'duck_egg'
-                         dropItem(tx, ty, produceId, 1)
-                         break // Only drop one
+                     // Custom isValid check for specific map
+                     const isValid = (y: number, x: number, plots: Plot[][]) => {
+                        if (y < 0 || y >= plots.length) return false
+                        const row = plots[y]
+                        if (!row || x < 0 || x >= row.length) return false
+                        const plot = row[x]
+                        if (!plot) return false
+                        if (plot.terrain === 'water') return false
+                        if (plot.object) return false
+                        return true
+                     }
+
+                     if (isValid(ty, tx, animalMapPlots)) {
+                         const produceId = animal.type === 'chicken' ? 'egg' : (animal.type === 'duck' ? 'duck_egg' : (animal.type === 'cow' ? 'milk' : 'wool'))
+                         // Add to dropped items
+                         gameState.value.droppedItems.push({
+                            id: `produce_${Date.now()}_${Math.random()}`,
+                            itemId: produceId,
+                            quantity: 1,
+                            x: tx + 0.5,
+                            y: ty + 0.5,
+                            createdAt: Date.now()
+                         })
+                         dropped = true
+                         break
                      }
                  }
-                 animal.produceReady = false // Consumed by dropping (or attempted)
             }
+            if (dropped) animal.produceReady = false
         }
 
-        animal.isFed = false // Reset for next day
+        animal.isFed = false
         animal.age++
     })
 
-    // Process crops
-    gameState.value.plots.forEach(row => {
-      row.forEach(plot => {
-        // Sprinklers
-        if (plot.object && plot.object.type.includes('sprinkler')) {
-            let offsets: {dx: number, dy: number}[] = []
-            if (plot.object.type === 'sprinkler') {
-                offsets = [{dx:0, dy:-1}, {dx:0, dy:1}, {dx:-1, dy:0}, {dx:1, dy:0}]
-            } else if (plot.object.type === 'quality_sprinkler') {
-                for(let i=-1; i<=1; i++) {
-                    for(let j=-1; j<=1; j++) {
-                        if (i===0 && j===0) continue
-                        offsets.push({dx:i, dy:j})
-                    }
-                }
-            } else if (plot.object.type === 'iridium_sprinkler') {
-                for(let i=-2; i<=2; i++) {
-                    for(let j=-2; j<=2; j++) {
-                        if (i===0 && j===0) continue
-                        offsets.push({dx:i, dy:j})
-                    }
-                }
-            }
+    // 7. Process Plots (Crops, Soil, Debris) - Iterate ALL maps
+    // First, save current plots to savedMaps to ensure we update everything
+    gameState.value.savedMaps[gameState.value.location] = gameState.value.plots
 
-            offsets.forEach(offset => {
-                const targetX = plot.x + offset.dx
-                const targetY = plot.y + offset.dy
-                const targetPlot = gameState.value.plots[targetY]?.[targetX]
-                if (targetPlot && targetPlot.isTilled) {
-                    targetPlot.isWatered = true
-                    if (targetPlot.crop) targetPlot.crop.isWatered = true
+    Object.keys(gameState.value.savedMaps).forEach(mapId => {
+        const mapPlots = gameState.value.savedMaps[mapId]
+        if (!mapPlots) return
+
+        mapPlots.forEach(row => {
+            row.forEach(plot => {
+                // Sprinklers (Only if map is farm or greenhouse ideally, but let's allow all)
+                if (plot.object && plot.object.type.includes('sprinkler')) {
+                    let offsets: {dx: number, dy: number}[] = []
+                    if (plot.object.type === 'sprinkler') offsets = [{dx:0, dy:-1}, {dx:0, dy:1}, {dx:-1, dy:0}, {dx:1, dy:0}]
+                    else if (plot.object.type === 'quality_sprinkler') {
+                         for(let i=-1; i<=1; i++) for(let j=-1; j<=1; j++) if(!(i===0&&j===0)) offsets.push({dx:i, dy:j})
+                    } else if (plot.object.type === 'iridium_sprinkler') {
+                         for(let i=-2; i<=2; i++) for(let j=-2; j<=2; j++) if(!(i===0&&j===0)) offsets.push({dx:i, dy:j})
+                    }
+
+                    offsets.forEach(offset => {
+                        const tY = plot.y + offset.dy
+                        const tX = plot.x + offset.dx
+                        const targetPlot = mapPlots[tY]?.[tX]
+                        if (targetPlot && targetPlot.isTilled) {
+                            targetPlot.isWatered = true
+                            if (targetPlot.crop) targetPlot.crop.isWatered = true
+                        }
+                    })
                 }
             })
-        }
+        })
 
-        // Season Change Logic: Wither crops
-        if (seasonChanged && plot.hasCrop && plot.crop) {
-             const seed = Object.values(ITEMS).find(i => i.type === 'seed' && i.cropType === plot.crop?.type)
-             let shouldWither = false
+        // Second pass for growth and decay
+        mapPlots.forEach(row => {
+            row.forEach(plot => {
+                 // Season Change: Wither
+                 if (seasonChanged && plot.hasCrop && plot.crop) {
+                     const cropDef = CROPS[plot.crop.type]
+                     let shouldWither = false
 
-             if (seed && seed.seasons && !seed.seasons.includes(gameState.value.currentSeason)) {
-                 shouldWither = true
-             } else if (!seed) {
-                 // Fallback: Check crop item seasons (for forage/wild seeds)
-                 const cropItem = ITEMS[plot.crop.type]
-                 if (cropItem && cropItem.seasons && !cropItem.seasons.includes(gameState.value.currentSeason)) {
-                     shouldWither = true
+                     if (cropDef) {
+                         if (!cropDef.seasons.includes(gameState.value.currentSeason)) shouldWither = true
+                     } else {
+                         // Legacy fallback
+                         const seed = Object.values(ITEMS).find(i => i.type === 'seed' && i.cropType === plot.crop?.type)
+                         if (seed && seed.seasons && !seed.seasons.includes(gameState.value.currentSeason)) shouldWither = true
+                     }
+
+                     if (shouldWither) {
+                         plot.hasCrop = false
+                         plot.crop = undefined
+                         plot.object = { type: 'weed', id: `dead_crop_${plot.x}_${plot.y}`, hp: 1 }
+                     }
                  }
-             }
 
-             if (shouldWither) {
-                 plot.hasCrop = false
-                 plot.crop = undefined
-                 // Turn into dead weed/trash
-                 plot.object = { type: 'weed', id: `dead_crop_${plot.x}_${plot.y}`, hp: 1 }
-             }
-        }
-
-        // Grow crops if watered
-        if (plot.hasCrop && plot.crop && plot.crop.isWatered) {
-          if (plot.crop.growthStage < plot.crop.maxGrowthStage) {
-             plot.crop.growthStage++
-          }
-        }
-
-        // Tree Growth
-        if (plot.object && plot.object.type.startsWith('tree_') && plot.object.growthStage !== undefined) {
-             // 20% chance to grow each day
-             if (plot.object.growthStage < 5 && Math.random() < 0.2) {
-                 plot.object.growthStage++
-                 // Reconstruct type: tree_{type}_{stage}
-                 const treeType = plot.object.treeType || 'oak'
-                 plot.object.type = `tree_${treeType}_${plot.object.growthStage}`
-
-                 // Update HP based on stage
-                 if (plot.object.growthStage === 5) {
-                     plot.object.hp = 10 // Full tree hp
-                 } else {
-                     plot.object.hp = 1 // Saplings are fragile
+                 // Growth
+                 if (plot.hasCrop && plot.crop && plot.crop.isWatered) {
+                     if (plot.crop.growthStage < plot.crop.maxGrowthStage) {
+                         plot.crop.growthStage++
+                     }
+                     // Regrowth logic could go here if we tracked "days since harvest"
                  }
-             }
-        }
 
-        // Reset water
-        plot.isWatered = false
-        if (plot.crop) {
-            plot.crop.isWatered = false
-        }
+                 // Tree Growth
+                 if (plot.object && plot.object.type.startsWith('tree_') && plot.object.growthStage !== undefined) {
+                     if (plot.object.growthStage < 5 && Math.random() < 0.2) {
+                         plot.object.growthStage++
+                         const treeType = plot.object.treeType || 'oak'
+                         plot.object.type = `tree_${treeType}_${plot.object.growthStage}`
+                         plot.object.hp = plot.object.growthStage === 5 ? 10 : 1
+                     }
+                 }
 
-        // Soil decay (untill)
-        if (plot.isTilled && !plot.hasCrop) {
-             // 50% chance to revert to normal soil if not watered (or always if dry?)
-             // Stardew: Unwatered tilled soil has chance to decay
-             if (Math.random() > 0.5) {
-                plot.isTilled = false
-             }
-        }
+                 // Reset Water
+                 plot.isWatered = false
+                 if (plot.crop) plot.crop.isWatered = false
 
-        // Spawning debris (start of season or daily small chance?)
-        // Stardew: Debris spreads. For now, small chance to spawn weed on empty grass
-        if (!plot.isTilled && !plot.hasCrop && !plot.object && Math.random() < 0.005) {
-            plot.object = { type: 'weed', id: `weed_${plot.x}_${plot.y}`, hp: 1 }
-        }
-      })
+                 // Soil Decay
+                 if (plot.isTilled && !plot.hasCrop && Math.random() > 0.5) {
+                     plot.isTilled = false
+                 }
+
+                 // Spawn Debris (Only on Farm)
+                if (mapId === 'farm' && !plot.isTilled && !plot.hasCrop && !plot.object && Math.random() < 0.005) {
+                    const r = Math.random()
+                    if (r < 0.5) plot.object = { type: 'weed', id: `weed_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
+                    else if (r < 0.75) plot.object = { type: 'wood', id: `twig_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
+                    else plot.object = { type: 'stone', id: `stone_${plot.x}_${plot.y}_${Date.now()}`, hp: 1 }
+                }
+           })
+       })
+
+       // Giant Crops Logic (Farm only)
+       if (mapId === 'farm') {
+           const rows = mapPlots.length
+           const cols = mapPlots[0]?.length || 0
+           for (let y = 0; y < rows - 2; y++) {
+               for (let x = 0; x < cols - 2; x++) {
+                   const row = mapPlots[y]
+                   if (!row) continue
+                   const p00 = row[x]
+                   if (!p00 || !p00.hasCrop || !p00.crop || p00.crop.growthStage < p00.crop.maxGrowthStage || !['cauliflower', 'melon', 'pumpkin'].includes(p00.crop.type)) continue
+
+                   const type = p00.crop.type
+                   let is3x3 = true
+                   // Check 3x3 grid
+                    for (let dy = 0; dy < 3; dy++) {
+                        for (let dx = 0; dx < 3; dx++) {
+                            const r = mapPlots[y + dy]
+                            const p = r ? r[x + dx] : undefined
+                            if (!p || !p.hasCrop || !p.crop || p.crop.type !== type || p.crop.growthStage < p.crop.maxGrowthStage) {
+                                is3x3 = false
+                                break
+                            }
+                        }
+                        if (!is3x3) break
+                    }
+
+                   if (is3x3 && Math.random() < 0.01) {
+                       // Form Giant Crop!
+                       // Clear crops in 3x3
+                        for (let dy = 0; dy < 3; dy++) {
+                            for (let dx = 0; dx < 3; dx++) {
+                                const r = mapPlots[y + dy]
+                                const p = r ? r[x + dx] : undefined
+                                if (p) {
+                                    p.hasCrop = false
+                                    p.crop = undefined
+                                    p.isWatered = false // Reset water
+                                    p.isTilled = false // Untill soil
+                                }
+                            }
+                        }
+                       // Place Giant Crop Object in top-left
+                        if (p00) {
+                            p00.object = {
+                                type: 'giant_crop',
+                                id: `giant_${type}_${x}_${y}_${Date.now()}`,
+                                hp: 10,
+                                // Custom property for giant crop
+                                cropType: type,
+                                width: 3,
+                                height: 3
+                            }
+                            addVisualEffect(p00.x + 1.5, p00.y + 1.5, '巨大作物!', 0xFF00FF)
+                        }
+                   }
+               }
+           }
+       }
     })
 
-    // Reset NPC daily flags
-    gameState.value.npcs.forEach(npc => {
-      npc.talkedToday = false
-      npc.giftedToday = false
-    })
+    // 8. Restore 'plots' reference if we modified the current map in savedMaps
+    // (Actually gameState.value.plots IS the array in savedMaps[location], but good to be safe)
+    if (gameState.value.savedMaps[gameState.value.location]) {
+        gameState.value.plots = gameState.value.savedMaps[gameState.value.location]!
+    }
 
-    saveGame() // Auto save on new day
+    // 9. Check Events
+    checkEvents('day_start')
+
+    // 10. Save
+    saveGame()
     console.log('New day processed!')
+    addVisualEffect(gameState.value.player.x, gameState.value.player.y, `第 ${gameState.value.currentDay} 天`, 0xFFFFFF)
   }
 
   // Get season name in Chinese
@@ -1556,6 +1806,7 @@ export const useGameStore = defineStore('game', () => {
       id: Date.now() + Math.random(),
       x,
       y,
+      type: 'text',
       text,
       color,
       createdAt: Date.now()
@@ -1596,6 +1847,33 @@ export const useGameStore = defineStore('game', () => {
     if (toolId === 'scythe') return 0
 
     return cost
+  }
+
+  // Sleep
+  const sleep = () => {
+      closeDialogue()
+      // Check if we are in bed? Component handles that check usually.
+
+      // If we are not exhausted, ensure we get full energy by not being <= 0
+      // Actually processNewDay checks energy <= 0.
+      // If we sleep with 1 energy, we get full restore.
+
+      processNewDay()
+
+      // Wake up in bed
+      // Assuming 'house' map and bed location
+      // TODO: make this dynamic based on farmhouse upgrades
+      if (gameState.value.location === 'house') {
+          gameState.value.player.x = 2
+          gameState.value.player.y = 3
+          gameState.value.player.direction = 'right'
+      } else {
+          // If slept elsewhere (e.g. tent?), stay there or warp home?
+          // Stardew warps home but charges money if passed out.
+          // If manually sleeping, assume we are in a bed.
+      }
+
+      SoundManager.getInstance().play('sleep') // Need sleep sound
   }
 
   // Interact with machine
@@ -1657,61 +1935,51 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Fishing State
-  const fishingState = ref({
-    isFishing: false,
-    state: 'idle' as 'idle' | 'casting' | 'waiting' | 'biting' | 'reeling',
-    timer: 0,
-    // New properties for minigame control
-    fishId: '' as string,
-    difficulty: 1, // 1-5?
-    behavior: 'mixed' as 'mixed' | 'smooth' | 'sinker' | 'floater' | 'dart',
-    treasure: false // Is there a treasure chest?
-  })
+  const fishingState = computed(() => gameState.value.fishingState)
 
   const stopFishing = () => {
-    fishingState.value.isFishing = false
-    fishingState.value.state = 'idle'
+    gameState.value.fishingState.state = 'idle'
     gameState.value.player.isUsingTool = false
-    fishingState.value.treasure = false
+    gameState.value.fishingState.treasure = false
   }
 
   const catchFish = () => {
     const player = gameState.value.player
-    if (fishingState.value.state === 'biting') {
+    if (gameState.value.fishingState.state === 'biting') {
         // Start Minigame
-        fishingState.value.state = 'reeling'
+        gameState.value.fishingState.state = 'reeling'
 
         // Determine fish NOW so we can set difficulty
         const fishes = ['sardine', 'smallmouth_bass', 'rainbow_trout', 'pufferfish', 'catfish']
         const index = Math.floor(Math.random() * fishes.length)
         const selectedFish = fishes[index]
-        fishingState.value.fishId = selectedFish || 'sardine'
+        gameState.value.fishingState.fishId = selectedFish || 'sardine'
 
         // Set difficulty based on fish
-        if (fishingState.value.fishId === 'pufferfish') {
-            fishingState.value.difficulty = 80 // Hard
-            fishingState.value.behavior = 'floater'
-        } else if (fishingState.value.fishId === 'catfish') {
-            fishingState.value.difficulty = 90
-            fishingState.value.behavior = 'mixed'
-        } else if (fishingState.value.fishId === 'sardine') {
-            fishingState.value.difficulty = 30
-            fishingState.value.behavior = 'dart'
+        if (gameState.value.fishingState.fishId === 'pufferfish') {
+            gameState.value.fishingState.difficulty = 80 // Hard
+            gameState.value.fishingState.behavior = 'floater'
+        } else if (gameState.value.fishingState.fishId === 'catfish') {
+            gameState.value.fishingState.difficulty = 90
+            gameState.value.fishingState.behavior = 'mixed'
+        } else if (gameState.value.fishingState.fishId === 'sardine') {
+            gameState.value.fishingState.difficulty = 30
+            gameState.value.fishingState.behavior = 'dart'
         } else {
-            fishingState.value.difficulty = 40
-            fishingState.value.behavior = 'smooth'
+            gameState.value.fishingState.difficulty = 40
+            gameState.value.fishingState.behavior = 'smooth'
         }
 
         // 15% chance for treasure
-        fishingState.value.treasure = Math.random() < 0.15
+        gameState.value.fishingState.treasure = Math.random() < 0.15
 
         addVisualEffect(player.x, player.y, '收杆!', 0xFFFFFF)
         SoundManager.getInstance().play('coin') // Feedback sound
-    } else if (fishingState.value.state === 'reeling') {
+    } else if (gameState.value.fishingState.state === 'reeling') {
         // Minigame click handled by component
     } else {
         // Pulled too early or late
-        if (fishingState.value.state === 'waiting') {
+        if (gameState.value.fishingState.state === 'waiting') {
              addVisualEffect(player.x, player.y, '收杆太早了', 0xFFFFFF)
         }
         stopFishing()
@@ -1721,7 +1989,7 @@ export const useGameStore = defineStore('game', () => {
   const completeFishing = (success: boolean, caughtTreasure: boolean = false) => {
     const player = gameState.value.player
     if (success) {
-        const caughtId = fishingState.value.fishId
+        const caughtId = gameState.value.fishingState.fishId
         if (caughtId) {
             const def = ITEMS[caughtId] as ItemDefinition | undefined
             const caughtName = def ? def.name : caughtId
@@ -1764,27 +2032,26 @@ export const useGameStore = defineStore('game', () => {
     }
 
     gameState.value.player.isUsingTool = true
-    fishingState.value.isFishing = true
-    fishingState.value.state = 'casting'
+    gameState.value.fishingState.state = 'casting'
     addVisualEffect(gameState.value.player.x, gameState.value.player.y, '抛竿...', 0xFFFFFF)
 
     // Casting animation time
     setTimeout(() => {
-        if (!fishingState.value.isFishing) return
-        fishingState.value.state = 'waiting'
+        if (gameState.value.fishingState.state !== 'casting') return
+        gameState.value.fishingState.state = 'waiting'
         addVisualEffect(gameState.value.player.x, gameState.value.player.y, '等待...', 0xCCCCCC)
 
         // Random wait time 2-5 seconds
         const waitTime = 2000 + Math.random() * 3000
         setTimeout(() => {
-            if (fishingState.value.isFishing && fishingState.value.state === 'waiting') {
-                fishingState.value.state = 'biting'
+            if (gameState.value.fishingState.state === 'waiting') {
+                gameState.value.fishingState.state = 'biting'
                 addVisualEffect(gameState.value.player.x, gameState.value.player.y, '!', 0xFF0000)
                 SoundManager.getInstance().play('splash') // Need splash sound
 
                 // 1 second window to catch
                 setTimeout(() => {
-                    if (fishingState.value.isFishing && fishingState.value.state === 'biting') {
+                    if (gameState.value.fishingState.state === 'biting') {
                         // Missed
                         addVisualEffect(gameState.value.player.x, gameState.value.player.y, '跑掉了...', 0xCCCCCC)
                         stopFishing()
@@ -1795,8 +2062,54 @@ export const useGameStore = defineStore('game', () => {
     }, 500)
   }
 
+  const findObjectAt = (x: number, y: number) => {
+    const plots = gameState.value.plots
+    // Check direct
+    if (plots[y] && plots[y][x] && plots[y][x].object) {
+        return { plot: plots[y][x], object: plots[y][x].object! }
+    }
+    // Check neighbors for giant objects (up to 2 tiles away top-left)
+    for (let dy = 0; dy <= 2; dy++) {
+        for (let dx = 0; dx <= 2; dx++) {
+            if (dx === 0 && dy === 0) continue
+            const py = y - dy
+            const px = x - dx
+            if (plots[py] && plots[py][px]) {
+                const p = plots[py][px]
+                if (p.object && p.object.width && p.object.width > dx && p.object.height && p.object.height > dy) {
+                    return { plot: p, object: p.object }
+                }
+            }
+        }
+    }
+    return null
+  }
+
   // Handle plot interaction
   const handlePlotInteraction = (x: number, y: number) => {
+    // Fishing Logic
+    if (gameState.value.fishingState.state === 'bite') {
+        gameState.value.fishingState.state = 'reeling'
+        const fishes = ['sardine', 'tuna', 'bream', 'carp']
+        gameState.value.fishingState.fishId = fishes[Math.floor(Math.random() * fishes.length)]
+        gameState.value.fishingState.treasure = Math.random() < 0.2
+        return
+    } else if (gameState.value.fishingState.state === 'reeling' || gameState.value.fishingState.state === 'casting' || gameState.value.fishingState.state === 'waiting') {
+        return
+    }
+
+    if (gameState.value.selectedTool === 'fishing_rod') {
+         const p = gameState.value.plots[y]?.[x]
+         if (p && p.terrain === 'water') {
+             const player = gameState.value.player
+             const dist = Math.sqrt(Math.pow(x - player.x, 2) + Math.pow(y - player.y, 2))
+             if (dist <= 5) {
+                 startFishing(x, y)
+                 return
+             }
+         }
+    }
+
     // Mine Ladders
     const ladderPlot = gameState.value.plots[y]?.[x]
     if (ladderPlot && ladderPlot.object) {
@@ -1812,6 +2125,17 @@ export const useGameStore = defineStore('game', () => {
                  switchLocation('mountain', 10, 18)
             }
             return
+        }
+        // Bed Interaction
+        if (ladderPlot.object.type === 'bed_head' || ladderPlot.object.type === 'bed_foot') {
+             openDialogue('系统', '要睡觉并开始新的一天吗？', '#000000', [
+                 { text: '是', action: () => {
+                     closeDialogue()
+                     sleep()
+                 }},
+                 { text: '否', action: () => closeDialogue() }
+             ])
+             return
         }
     }
 
@@ -1919,26 +2243,39 @@ export const useGameStore = defineStore('game', () => {
     if (plot.hasCrop && plot.crop && plot.crop.growthStage >= plot.crop.maxGrowthStage) {
        // Harvest crop logic
        const cropType = plot.crop.type
-       const cropName = getCropName(cropType)
+       const cropDef = CROPS[cropType]
+       const cropName = cropDef?.name || getCropName(cropType)
        const crop = plot.crop
 
-       // Special Logic: Chance for multiple drops (e.g. blueberries, cranberries, coffee)
+       // Yield Calculation
        let quantity = 1
-       if (cropType === 'blueberry') quantity = 3
-       else if (cropType === 'cranberry') quantity = 2
-       else if (cropType === 'coffee_bean') quantity = 4
-       else if (cropType === 'potato') {
-           if (Math.random() < 0.2) quantity = 2 // Chance for extra potato
+       if (cropDef) {
+           const min = cropDef.minHarvest || 1
+           const max = cropDef.maxHarvest || 1
+           quantity = Math.floor(Math.random() * (max - min + 1)) + min
+
+           if (cropDef.extraYieldChance && Math.random() < cropDef.extraYieldChance) {
+               quantity += 1
+           }
+       } else {
+           // Fallback
+           if (cropType === 'blueberry') quantity = 3
+           else if (cropType === 'cranberry') quantity = 2
+           else if (cropType === 'coffee_bean') quantity = 4
+           else if (cropType === 'potato') {
+               if (Math.random() < 0.2) quantity = 2
+           }
        }
 
-       dropItem(x, y, cropType, quantity)
+       const harvestItemId = cropDef?.harvestItemId || cropType
+       dropItem(x, y, harvestItemId, quantity)
 
-       addVisualEffect(x, y, `+${quantity} ${cropName}`, 0xFFA500)
-       SoundManager.getInstance().play('harvest') // Assuming harvest sound
+       addVisualEffect(x, y, `+${quantity} ${ITEMS[harvestItemId]?.name || cropName}`, 0xFFA500)
+       SoundManager.getInstance().play('harvest')
 
        // Regrow Logic
        if (crop.regrowAfterHarvest !== undefined) {
-           crop.growthStage = crop.regrowAfterHarvest
+           crop.growthStage = Math.max(0, crop.maxGrowthStage - crop.regrowAfterHarvest)
            // Keep isWatered? Usually resets water for the day if harvested? Stardew logic: harvest doesn't consume water, but growth happens at night.
            // If I harvest today, it stays watered if I watered it today?
            // Simplest: Don't change isWatered.
@@ -2050,8 +2387,29 @@ export const useGameStore = defineStore('game', () => {
 
       case 'axe':
         SoundManager.getInstance().play('axe')
-        if (plot.object) {
-            const obj = plot.object
+
+        const foundAxe = findObjectAt(x, y)
+        const axeObj = foundAxe ? foundAxe.object : plot.object
+        const axePlot = foundAxe ? foundAxe.plot : plot
+
+        if (axeObj) {
+            const obj = axeObj
+
+            // Giant Crop
+            if (obj.type === 'giant_crop') {
+                 addParticle(x, y, 'wood', 0xFF00FF, 5)
+                 obj.hp -= 1
+                 if (obj.hp <= 0) {
+                     axePlot.object = undefined
+                     const cropType = obj.cropType || 'cauliflower'
+                     const dropCount = 15 + Math.floor(Math.random() * 10)
+                     dropItem(x, y, cropType, dropCount)
+                     addVisualEffect(x, y, `巨大${cropType}!`, 0xFF00FF)
+                     SoundManager.getInstance().play('stump_broken')
+                 }
+                 player.energy -= staminaCost
+                 break
+            }
 
             // Handle Trees and Stumps
             if (obj.type.startsWith('tree_')) {
@@ -2060,7 +2418,7 @@ export const useGameStore = defineStore('game', () => {
                      addParticle(x, y, 'wood', 0xA0522D, 4)
                      obj.hp -= 1
                      if (obj.hp <= 0) {
-                         plot.object = undefined
+                         axePlot.object = undefined
                          dropItem(x, y, 'wood', 4)
                          addVisualEffect(x, y, '+4 木头', 0xA0522D)
                      }
@@ -2079,7 +2437,7 @@ export const useGameStore = defineStore('game', () => {
                     if (stage < 5) {
                         // Destroy sapling
                         addParticle(x, y, 'leaf', 0x228B22, 8)
-                        plot.object = undefined
+                        axePlot.object = undefined
                         dropItem(x, y, 'wood', 1)
                         const treeType = obj.treeType || 'oak'
                         const seedId = treeType === 'maple' ? 'maple_seed' : (treeType === 'pine' ? 'pine_cone' : 'acorn')
@@ -2178,7 +2536,7 @@ export const useGameStore = defineStore('game', () => {
         break
 
       case 'fishing_rod':
-        if (fishingState.value.isFishing) {
+        if (gameState.value.fishingState.state !== 'idle') {
             catchFish()
         } else {
             startFishing(x, y)
@@ -2333,52 +2691,64 @@ export const useGameStore = defineStore('game', () => {
     const seedDef = ITEMS[itemId]
     if (!seedDef || !seedDef.cropType) return false
 
-    // Season Check
-    if (seedDef.seasons && !seedDef.seasons.includes(gameState.value.currentSeason)) {
-        // Allow greenhouse if we had one, but for now strict check
-        addVisualEffect(x, y, '季节不对', 0xFF0000)
-        return false
-    }
-
-    let cropType = seedDef.cropType || 'parsnip'
+    let cropType = seedDef.cropType
+    let cropDef = CROPS[cropType]
 
     // Handle Mixed Seeds
     if (itemId === 'mixed_seeds') {
-        // Pick random crop for current season
         const season = gameState.value.currentSeason
-        const possibleCrops = Object.values(ITEMS).filter(i =>
-            i.type === 'seed' &&
-            i.seasons?.includes(season) &&
-            i.id !== 'mixed_seeds' &&
-            !i.id.includes('wild') && // Exclude wild seeds
-            i.cropType !== 'ancient_fruit' && // Exclude ancient
-            i.cropType !== 'sweet_gem_berry' // Exclude rare
-        )
+        const possibleCrops = Object.values(CROPS).filter(c => c.seasons.includes(season))
+
         if (possibleCrops.length > 0) {
-            const randomSeed = possibleCrops[Math.floor(Math.random() * possibleCrops.length)]
-            if (randomSeed) {
-                cropType = randomSeed.cropType || 'parsnip'
-            }
+             const randomCrop = possibleCrops[Math.floor(Math.random() * possibleCrops.length)]
+             if (randomCrop) {
+                 cropType = randomCrop.id
+                 cropDef = randomCrop
+             }
         } else {
-            cropType = 'parsnip' // Fallback
+             cropType = 'parsnip'
+             cropDef = CROPS['parsnip']
         }
     }
-    // Handle Wild Seeds
+    // Handle Wild Seeds (Winter) - simplified as forage
     else if (itemId === 'winter_seeds') {
         const forage = ['winter_root', 'crystal_fruit', 'snow_yam', 'crocus']
         cropType = forage[Math.floor(Math.random() * forage.length)] || 'winter_root'
+        // Wild seeds behave differently, they are forage items, not standard crops usually, but let's treat them as crops for now if we have definitions, or just simple items.
+        // For now, if we don't have a CropDefinition, we might fail.
+        // Let's stick to standard crops for now or ensure forage has crop defs if we want them to grow.
+        // If no crop def, fallback to manual props or fail.
+        if (!CROPS[cropType]) {
+             // Fallback to simple generic crop
+             cropDef = {
+                 id: cropType,
+                 name: ITEMS[cropType]?.name || cropType,
+                 seedId: itemId,
+                 harvestItemId: cropType,
+                 seasons: ['winter'],
+                 growthStages: 7
+             }
+        }
     }
-    else if (itemId === 'spring_seeds') {
-        const forage = ['wild_horseradish', 'daffodil', 'leek', 'dandelion']
-        cropType = forage[Math.floor(Math.random() * forage.length)] || 'wild_horseradish'
+    // ... other wild seeds ...
+
+    if (!cropDef) {
+        // Fallback if not found in CROPS (legacy support)
+         cropDef = {
+             id: cropType,
+             name: ITEMS[cropType]?.name || cropType,
+             seedId: itemId,
+             harvestItemId: cropType,
+             seasons: (seedDef.seasons as ('spring' | 'summer' | 'autumn' | 'winter')[]) || ['spring'],
+             growthStages: seedDef.growthStages || 4,
+             regrow: seedDef.regrowAfterHarvest
+         }
     }
-    else if (itemId === 'summer_seeds') {
-        const forage = ['spice_berry', 'grape', 'sweet_pea']
-        cropType = forage[Math.floor(Math.random() * forage.length)] || 'spice_berry'
-    }
-    else if (itemId === 'fall_seeds') {
-        const forage = ['common_mushroom', 'wild_plum', 'hazelnut', 'blackberry']
-        cropType = forage[Math.floor(Math.random() * forage.length)] || 'common_mushroom'
+
+    // Season Check
+    if (!cropDef.seasons.includes(gameState.value.currentSeason)) {
+        addVisualEffect(x, y, '季节不对', 0xFF0000)
+        return false
     }
 
     // Plant the seed
@@ -2387,8 +2757,8 @@ export const useGameStore = defineStore('game', () => {
       id: `${cropType}_${x}_${y}_${Date.now()}`,
       type: cropType,
       growthStage: 0,
-      maxGrowthStage: seedDef.growthStages || 4,
-      regrowAfterHarvest: seedDef.regrowAfterHarvest, // Copy regrow info
+      maxGrowthStage: cropDef.growthStages,
+      regrowAfterHarvest: cropDef.regrow,
       plantedAt: Date.now(),
       isWatered: false
     }
@@ -2400,6 +2770,7 @@ export const useGameStore = defineStore('game', () => {
       gameState.value.inventory.splice(index, 1)
     }
 
+    SoundManager.getInstance().play('dirty_hit')
     console.log(`Planted ${itemId} (as ${cropType}) at (${x}, ${y})`)
     return true
   }
@@ -2713,6 +3084,91 @@ export const useGameStore = defineStore('game', () => {
     // Check if NPC is in their shop location
     // Note: npc.location should match shop.location
     if (shop && npc.location === shop.location) {
+        if (npc.id === 'robin') {
+            openDialogue(npc.name, '你好！需要扩建农场吗？', '#' + npc.spriteColor.toString(16), [
+                {
+                    text: '购买资源',
+                    action: () => {
+                        closeDialogue()
+                        openShop(shop.items)
+                    }
+                },
+                {
+                    text: '建造建筑',
+                    action: () => {
+                        closeDialogue()
+                        openCarpenterMenu()
+                    }
+                },
+                {
+                    text: '交谈',
+                    action: () => {
+                        closeDialogue()
+                        processRegularTalk(npc)
+                    }
+                },
+                {
+                    text: '离开',
+                    action: () => closeDialogue()
+                }
+            ])
+            return
+        }
+
+        if (npc.id === 'marnie') {
+             const marnieShop = shops['marnie']
+             const marnieItems = marnieShop ? marnieShop.items : []
+
+             openDialogue(npc.name, '哦，你好。是来买牲畜的吗？', '#e74c3c', [
+                 { text: '购买补给', action: () => openShop(marnieItems) },
+                 {
+                     text: '购买家禽 (鸡/鸭)',
+                     action: () => {
+                          closeDialogue()
+                          // Trigger Animal Purchase - Simplified: Auto-buy chicken if Coop exists
+                          // In real implementation: Show Animal Selection UI
+                          const farmBuildings = gameState.value.buildings['farm'] || []
+                          const coops = farmBuildings.filter(b => b.type === 'coop')
+                           const firstCoop = coops[0]
+                           if (!firstCoop) {
+                               openDialogue(npc.name, '你需要先建造鸡舍才能养鸡。', '#e74c3c')
+                           } else {
+                               // Auto-buy Chicken
+                               if (gameState.value.player.gold >= 800) {
+                                   gameState.value.player.gold -= 800
+                                   addAnimal('chicken', '小鸡' + Math.floor(Math.random()*100), firstCoop.id)
+                                   openDialogue(npc.name, '这只小鸡归你了！好好照顾它。', '#e74c3c')
+                               } else {
+                                   openDialogue(npc.name, '你的钱不够... (需要 800 G)', '#e74c3c')
+                               }
+                           }
+                      }
+                  },
+                  {
+                      text: '购买家畜 (牛/羊)',
+                      action: () => {
+                           closeDialogue()
+                           const farmBuildings = gameState.value.buildings['farm'] || []
+                           const barns = farmBuildings.filter(b => b.type === 'barn')
+                           const firstBarn = barns[0]
+                           if (!firstBarn) {
+                               openDialogue(npc.name, '你需要先建造畜棚才能养牛。', '#e74c3c')
+                           } else {
+                               if (gameState.value.player.gold >= 1500) {
+                                   gameState.value.player.gold -= 1500
+                                   addAnimal('cow', '奶牛' + Math.floor(Math.random()*100), firstBarn.id)
+                                   openDialogue(npc.name, '这头奶牛归你了！', '#e74c3c')
+                               } else {
+                                   openDialogue(npc.name, '你的钱不够... (需要 1500 G)', '#e74c3c')
+                               }
+                           }
+                      }
+                 },
+                 { text: '离开', action: () => closeDialogue() }
+             ])
+             return
+        }
+
         openDialogue(npc.name, '有什么需要的吗？', '#' + npc.spriteColor.toString(16), [
             {
                 text: '购买补给',
@@ -2858,13 +3314,7 @@ export const useGameStore = defineStore('game', () => {
     talkToNPC(npc)
   }
 
-  const sleep = () => {
-    closeDialogue()
-    saveGame()
-    processNewDay()
-    addVisualEffect(gameState.value.player.x, gameState.value.player.y, 'ZZZ...', 0xFFFFFF)
-    // SoundManager.getInstance().play('sleep')
-  }
+
 
   const eatItem = (itemId: string) => {
     const item = gameState.value.inventory.find(i => i.id === itemId)
@@ -2970,17 +3420,159 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  // Carpenter State
+  const carpenterState = ref<{
+    isOpen: boolean
+  }>({
+    isOpen: false
+  })
+
+  const openCarpenterMenu = () => {
+    isMenuOpen.value = true
+    carpenterState.value.isOpen = true
+  }
+
+  const closeCarpenterMenu = () => {
+    isMenuOpen.value = false
+    carpenterState.value.isOpen = false
+  }
+
+  // Building Placement
+  const placementState = ref<{
+    isPlacing: boolean
+    buildingId?: string
+    width: number
+    height: number
+    type: string
+    goldCost: number
+    resourceCost: Record<string, number>
+  }>({
+    isPlacing: false,
+    width: 0,
+    height: 0,
+    type: '',
+    goldCost: 0,
+    resourceCost: {}
+  })
+
+  const startBuildingPlacement = (data: { buildingId: string, width: number, height: number, type: string, goldCost: number, resourceCost: Record<string, number> }) => {
+    placementState.value = {
+        isPlacing: true,
+        ...data
+    }
+    // Switch to farm to place building
+    if (gameState.value.location !== 'farm') {
+        switchLocation('farm', 30, 20) // Default center-ish
+    }
+    // Close menus
+    isMenuOpen.value = false
+    shopState.value.isOpen = false
+    carpenterState.value.isOpen = false
+    dialogueState.value.isOpen = false
+
+    addVisualEffect(gameState.value.player.x, gameState.value.player.y, '请选择建造位置', 0xFFFFFF)
+  }
+
+  const cancelPlacement = () => {
+    placementState.value.isPlacing = false
+  }
+
+  const confirmPlacement = (x: number, y: number) => {
+    if (!placementState.value.isPlacing) return false
+
+    // 1. Validate Cost again (safety)
+    const gold = gameState.value.player.gold
+    if (gold < placementState.value.goldCost) return false
+
+    for (const [res, qty] of Object.entries(placementState.value.resourceCost)) {
+        if (countItem(res) < qty) return false
+    }
+
+    // 2. Validate Placement
+    // Check bounds and collisions
+    const width = placementState.value.width
+    const height = placementState.value.height
+
+    // Check bounds
+    // Assuming farm map is current
+    const plots = gameState.value.plots
+    if (y + height > plots.length || !plots[0] || x + width > plots[0].length) {
+        addVisualEffect(x, y, '位置无效', 0xFF0000)
+        return false
+    }
+
+    // Check collisions
+    for(let dy=0; dy<height; dy++) {
+        for(let dx=0; dx<width; dx++) {
+            const plotRow = plots[y+dy]
+            if (!plotRow) return false
+            const plot = plotRow[x+dx]
+            if (!plot) return false
+            // Can't build on water or existing objects (unless we clear them? Stardew clears debris but not machines/crops)
+            // Let's require clear ground for now
+            if (plot.terrain === 'water') {
+                 addVisualEffect(x, y, '无法在水上建造', 0xFF0000)
+                 return false
+            }
+            if (plot.object || plot.hasCrop) {
+                 addVisualEffect(x, y, '请先清理地面', 0xFF0000)
+                 return false
+            }
+        }
+    }
+
+    // 3. Deduct Cost
+    gameState.value.player.gold -= placementState.value.goldCost
+    for (const [res, qty] of Object.entries(placementState.value.resourceCost)) {
+        removeFromInventory(res, qty)
+    }
+
+    // 4. Place Building
+    if (!gameState.value.buildings['farm']) gameState.value.buildings['farm'] = []
+
+    gameState.value.buildings['farm'].push({
+        id: `${placementState.value.type}_${Date.now()}`,
+        type: placementState.value.type,
+        x,
+        y,
+        width,
+        height,
+        doorX: x + Math.floor(width/2),
+        doorY: y + height - 1 // Assume door at bottom center
+    })
+
+    SoundManager.getInstance().play('axe') // Construction sound
+    addVisualEffect(x, y, '建造完成!', 0x00FF00)
+
+    placementState.value.isPlacing = false
+    return true
+  }
+
   return {
     // State
     gameState,
-    currentTime,
+    placementState, // Export placement state
+     carpenterState,
+     openCarpenterMenu,
+     closeCarpenterMenu,
+     currentTime,
     playerGold,
     playerEnergy,
     isExhausted,
     selectedTool,
+    isRaining,
+    isSnowing,
+    isDebrisWeather,
 
     // Methods
     initializeGame,
+    startBuildingPlacement,
+    cancelPlacement,
+    confirmPlacement,
+    sleep,
+    addAnimal, // Export
+    updateFishing,
+    reel,
     startGameLoop,
     updatePlayerPosition,
     switchLocation,

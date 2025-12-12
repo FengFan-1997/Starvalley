@@ -16,6 +16,7 @@
       :name="gameStore.dialogueState.name"
       :text="gameStore.dialogueState.text"
       :portrait-color="gameStore.dialogueState.portraitColor"
+      :choices="gameStore.dialogueState.choices"
       @close="gameStore.closeDialogue()"
     />
 
@@ -67,6 +68,7 @@
     </Transition>
 
     <ShopModal />
+    <CarpenterMenu ref="carpenterMenuRef" v-if="gameStore.carpenterState.isOpen" />
   </div>
 </template>
 
@@ -81,11 +83,26 @@ import SkillsModal from './SkillsModal.vue'
 import ShopModal from './ShopModal.vue'
 import DialogueBox from '@/components/ui/DialogueBox.vue'
 import PixelButton from '@/components/ui/PixelButton.vue'
-import { useGameStore, ITEMS } from '@/stores/game'
+import { useGameStore } from '@/stores/game'
+
+import CarpenterMenu from './CarpenterMenu.vue'
 
 const emit = defineEmits(['return-to-title'])
 const gameStore = useGameStore()
 const gameCanvasRef = ref(null)
+const carpenterMenuRef = ref<InstanceType<typeof CarpenterMenu> | null>(null)
+
+// Watch for Robin shop call from game logic (if triggered via state, but we call via openDialogue currently)
+// Actually game logic calls openDialogue.
+// We need to bridge the "Construction" option in Robin's dialogue to opening this menu.
+// The dialogue action in game.ts calls 'openShop' or 'openDialogue'.
+// We should add a specific action for opening carpenter menu.
+// For now, let's expose a global event bus or store flag?
+// Or better: Add 'carpenterState' to store similar to 'shopState'.
+
+// Let's stick to the current plan: game.ts interacts with Robin.
+// We need to update game.ts to support opening Carpenter Menu.
+// I will modify game.ts to have carpenterState.
 
 const showMenu = ref(false)
 const activeTab = ref('inventory')

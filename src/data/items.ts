@@ -1,7 +1,7 @@
 export interface ItemDefinition {
   id: string
   name: string
-  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture' | 'ring' | 'boots' | 'hat'
+  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture' | 'ring' | 'boots' | 'hat' | 'artisan'
   price: number
   sellPrice?: number
   description: string
@@ -98,6 +98,29 @@ export const ITEMS: Record<string, ItemDefinition> = {
   wild_horseradish: { id: 'wild_horseradish', name: '野山葵', type: 'resource', icon: '🌿', description: '根部辛辣。', price: 0, sellPrice: 50, canEat: true, energy: 13, seasons: ['spring'] },
   morel: { id: 'morel', name: '羊肚菌', type: 'resource', icon: '🍄', description: '因其独特的味道而受到追捧。', price: 0, sellPrice: 150, canEat: true, energy: 20, seasons: ['spring'] },
   salmonberry: { id: 'salmonberry', name: '美洲大树莓', type: 'resource', icon: '🍒', description: '初夏的浆果。', price: 0, sellPrice: 5, canEat: true, energy: 25, seasons: ['spring'] },
+
+  // --- Winter Forage ---
+  winter_root: { id: 'winter_root', name: '冬根', type: 'resource', icon: '🍠', description: '一种富含淀粉的块茎。', price: 0, sellPrice: 70, canEat: true, energy: 25, seasons: ['winter'] },
+  crystal_fruit: { id: 'crystal_fruit', name: '水晶果', type: 'resource', icon: '💎', description: '一种精致的水果。', price: 0, sellPrice: 150, canEat: true, energy: 63, seasons: ['winter'] },
+  snow_yam: { id: 'snow_yam', name: '雪山药', type: 'resource', icon: '🍠', description: '这种小山药隐藏在雪下。', price: 0, sellPrice: 100, canEat: true, energy: 30, seasons: ['winter'] },
+  crocus: { id: 'crocus', name: '番红花', type: 'resource', icon: '🌷', description: '一种可以在冬天开花的花。', price: 0, sellPrice: 60, canEat: false, seasons: ['winter'] },
+  winter_seeds: { id: 'winter_seeds', name: '冬季种子', type: 'seed', icon: '🌰', description: '可以在冬天种植的野生种子。', price: 30, sellPrice: 15, cropType: 'winter_root' }, // Logic handles random crop
+
+  // --- Fruit Tree Saplings ---
+  cherry_sapling: { id: 'cherry_sapling', name: '樱桃树苗', type: 'seed', icon: '🌱', description: '28天长成樱桃树。春季结果。', price: 3400, sellPrice: 850, cropType: 'cherry' },
+  apricot_sapling: { id: 'apricot_sapling', name: '杏子树苗', type: 'seed', icon: '🌱', description: '28天长成杏子树。春季结果。', price: 2000, sellPrice: 500, cropType: 'apricot' },
+  orange_sapling: { id: 'orange_sapling', name: '橙子树苗', type: 'seed', icon: '🌱', description: '28天长成橙子树。夏季结果。', price: 4000, sellPrice: 1000, cropType: 'orange' },
+  peach_sapling: { id: 'peach_sapling', name: '桃子树苗', type: 'seed', icon: '🌱', description: '28天长成桃子树。夏季结果。', price: 6000, sellPrice: 1500, cropType: 'peach' },
+  pomegranate_sapling: { id: 'pomegranate_sapling', name: '石榴树苗', type: 'seed', icon: '🌱', description: '28天长成石榴树。秋季结果。', price: 6000, sellPrice: 1500, cropType: 'pomegranate' },
+  apple_sapling: { id: 'apple_sapling', name: '苹果树苗', type: 'seed', icon: '🌱', description: '28天长成苹果树。秋季结果。', price: 4000, sellPrice: 1000, cropType: 'apple' },
+
+  // --- Fruits ---
+  cherry: { id: 'cherry', name: '樱桃', type: 'food', icon: '🍒', description: '酸甜可口。', price: 0, sellPrice: 80, canEat: true, energy: 38 },
+  apricot: { id: 'apricot', name: '杏子', type: 'food', icon: '🍑', description: '柔嫩的水果。', price: 0, sellPrice: 50, canEat: true, energy: 38 },
+  orange: { id: 'orange', name: '橙子', type: 'food', icon: '🍊', description: '多汁芳香。', price: 0, sellPrice: 100, canEat: true, energy: 38 },
+  peach: { id: 'peach', name: '桃子', type: 'food', icon: '🍑', description: '毛茸茸的。', price: 0, sellPrice: 140, canEat: true, energy: 38 },
+  pomegranate: { id: 'pomegranate', name: '石榴', type: 'food', icon: '🍅', description: '里面有很多多汁的种子。', price: 0, sellPrice: 140, canEat: true, energy: 38 },
+  apple: { id: 'apple', name: '苹果', type: 'food', icon: '🍎', description: '清脆香甜。', price: 0, sellPrice: 100, canEat: true, energy: 38 },
   spice_berry: { id: 'spice_berry', name: '香料浆果', type: 'resource', icon: '🫐', description: '充满了夏日气息。', price: 0, sellPrice: 80, canEat: true, energy: 25, seasons: ['summer'] },
   grape: { id: 'grape', name: '葡萄', type: 'resource', icon: '🍇', description: '一串甜美的水果。', price: 0, sellPrice: 80, canEat: true, energy: 38, seasons: ['summer'] },
   sweet_pea: { id: 'sweet_pea', name: '香豌豆', type: 'resource', icon: '🌸', description: '夏日香气。', price: 0, sellPrice: 50, canEat: false, seasons: ['summer'] },
@@ -106,10 +129,6 @@ export const ITEMS: Record<string, ItemDefinition> = {
   hazelnut: { id: 'hazelnut', name: '榛子', type: 'resource', icon: '🌰', description: '巨大的榛子。', price: 0, sellPrice: 90, canEat: true, energy: 30, seasons: ['autumn'] },
   blackberry: { id: 'blackberry', name: '黑莓', type: 'resource', icon: '🫐', description: '秋天的浆果。', price: 0, sellPrice: 20, canEat: true, energy: 25, seasons: ['autumn'] },
   chanterelle: { id: 'chanterelle', name: '鸡油菌', type: 'resource', icon: '🍄', description: '一种美味的蘑菇，有水果味和轻微的胡椒味。', price: 0, sellPrice: 160, canEat: true, energy: 75, seasons: ['autumn'] },
-  winter_root: { id: 'winter_root', name: '冬根', type: 'resource', icon: '🥔', description: '富含淀粉的块茎。', price: 0, sellPrice: 70, canEat: true, energy: 25, seasons: ['winter'] },
-  crystal_fruit: { id: 'crystal_fruit', name: '水晶果', type: 'resource', icon: '💎', description: '精致的水果。', price: 0, sellPrice: 150, canEat: true, energy: 63, seasons: ['winter'] },
-  snow_yam: { id: 'snow_yam', name: '雪山药', type: 'resource', icon: '🍠', description: '藏在雪下。', price: 0, sellPrice: 100, canEat: true, energy: 30, seasons: ['winter'] },
-  crocus: { id: 'crocus', name: '番红花', type: 'resource', icon: '🌷', description: '冬天也能开花。', price: 0, sellPrice: 60, canEat: false, seasons: ['winter'] },
   holly: { id: 'holly', name: '冬青', type: 'resource', icon: '🌿', description: '叶子和红浆果深受喜爱。', price: 0, sellPrice: 80, canEat: false, seasons: ['winter'] },
   red_mushroom: { id: 'red_mushroom', name: '红蘑菇', type: 'resource', icon: '🍄', description: '这种斑点蘑菇很辣。', price: 0, sellPrice: 75, canEat: false, energy: -50 },
   purple_mushroom: { id: 'purple_mushroom', name: '紫蘑菇', type: 'resource', icon: '🍄', description: '一种稀有的蘑菇。', price: 0, sellPrice: 250, canEat: true, energy: 125 },
@@ -198,8 +217,6 @@ export const ITEMS: Record<string, ItemDefinition> = {
   grape_starter: { id: 'grape_starter', name: '葡萄种子', type: 'seed', icon: '🌰', description: '秋季作物。需要支架。', price: 60, sellPrice: 30, cropType: 'grape', growthStages: 10, regrowAfterHarvest: 7, seasons: ['autumn'] },
   artichoke_seeds: { id: 'artichoke_seeds', name: '朝鲜蓟种子', type: 'seed', icon: '🌰', description: '秋季作物。', price: 30, sellPrice: 15, cropType: 'artichoke', growthStages: 8, seasons: ['autumn'] },
   rare_seed: { id: 'rare_seed', name: '稀有种子', type: 'seed', icon: '💎', description: '在秋天播种。稍微有一点光环。', price: 1000, sellPrice: 200, cropType: 'sweet_gem_berry', growthStages: 24, seasons: ['autumn'] },
-  type: 'crop' | 'seed' | 'tool' | 'resource' | 'food' | 'misc' | 'weapon' | 'fish' | 'mineral' | 'artifact' | 'trash' | 'furniture'
-
 
   // Artisan Items
   coffee_bean: { id: 'coffee_bean', name: '咖啡豆', type: 'seed', icon: '🫘', description: '可以在夏天种植，或者放入小桶酿造咖啡。', price: 2500, sellPrice: 15, cropType: 'coffee_bean', growthStages: 10, regrowAfterHarvest: 8, seasons: ['spring', 'summer'] },
@@ -594,11 +611,26 @@ export const ITEMS: Record<string, ItemDefinition> = {
   hay: { id: 'hay', name: '干草', type: 'resource', icon: '🌾', description: '喂养动物的干草。', price: 50, sellPrice: 0 },
   heater: { id: 'heater', name: '加热器', type: 'misc', icon: '🔥', description: '在冬天让你的动物保持温暖。', price: 2000, sellPrice: 0 },
   auto_grabber: { id: 'auto_grabber', name: '自动采集器', type: 'misc', icon: '🤖', description: '自动收集动物产品。', price: 25000, sellPrice: 0 },
+  mayonnaise: { id: 'mayonnaise', name: '蛋黄酱', type: 'artisan', icon: '🥛', description: '看起来很好吃，可以抹在面包上。', price: 0, sellPrice: 190, canEat: true, energy: 50 },
+  cheese: { id: 'cheese', name: '奶酪', type: 'artisan', icon: '🧀', description: '你的普通奶酪。', price: 0, sellPrice: 230, canEat: true, energy: 125 },
+  goat_cheese: { id: 'goat_cheese', name: '山羊奶酪', type: 'artisan', icon: '🧀', description: '用山羊奶做的软奶酪。', price: 0, sellPrice: 400, canEat: true, energy: 125 },
+  cloth: { id: 'cloth', name: '布料', type: 'artisan', icon: '🧶', description: '一卷精细的羊毛布料。', price: 0, sellPrice: 470 },
+  wine: { id: 'wine', name: '果酒', type: 'artisan', icon: '🍷', description: '这种酒可以随时饮用。', price: 0, sellPrice: 400, canEat: true, energy: 50 },
+  juice: { id: 'juice', name: '果汁', type: 'artisan', icon: '🧃', description: '一种甜美、有营养的饮料。', price: 0, sellPrice: 200, canEat: true, energy: 75 },
+  beer: { id: 'beer', name: '啤酒', type: 'artisan', icon: '🍺', description: '适度饮用。', price: 0, sellPrice: 200, canEat: true, energy: 50 },
+  pale_ale: { id: 'pale_ale', name: '淡啤酒', type: 'artisan', icon: '🍺', description: '喝一点没事。', price: 0, sellPrice: 300, canEat: true, energy: 50 },
+  jelly: { id: 'jelly', name: '果酱', type: 'artisan', icon: '🍯', description: '粘糊糊的。', price: 0, sellPrice: 160, canEat: true, energy: 50 },
+  pickles: { id: 'pickles', name: '腌菜', type: 'artisan', icon: '🥒', description: '有点酸。', price: 0, sellPrice: 100, canEat: true, energy: 25 },
 
   // --- Misc ---
-  trash: { id: 'trash', name: '垃圾', type: 'trash', icon: '🗑️', description: '就是垃圾。', price: 0, sellPrice: 0 },
-  driftwood: { id: 'driftwood', name: '浮木', type: 'trash', icon: '🪵', description: '从海里漂来的一块木头。', price: 0, sellPrice: 0 },
-  broken_glasses: { id: 'broken_glasses', name: '破损的眼镜', type: 'trash', icon: '👓', description: '好像有人把眼镜弄丢了。', price: 0, sellPrice: 0 },
-  broken_cd: { id: 'broken_cd', name: '破损的CD', type: 'trash', icon: '💿', description: '这是JojaNet 2.0试用光盘。', price: 0, sellPrice: 0 },
-  soggy_newspaper: { id: 'soggy_newspaper', name: '湿透的报纸', type: 'trash', icon: '📰', description: '这简直是一团糟。', price: 0, sellPrice: 0 },
+  bread: { id: 'bread', name: '面包', type: 'food', icon: '🍞', description: '硬皮法棍。', price: 120, sellPrice: 60, canEat: true, energy: 50 },
+  salad: { id: 'salad', name: '沙拉', type: 'food', icon: '🥗', description: '健康的午餐。', price: 220, sellPrice: 110, canEat: true, energy: 113 },
+  pizza: { id: 'pizza', name: '披萨', type: 'food', icon: '🍕', description: '这种受欢迎的食物很美味。', price: 600, sellPrice: 300, canEat: true, energy: 150 },
+  coffee: { id: 'coffee', name: '咖啡', type: 'food', icon: '☕', description: '这种饮料闻起来很香，能让人精神充沛。', price: 300, sellPrice: 150, canEat: true, energy: 3 },
+
+  trash: { id: 'trash', name: '垃圾', type: 'trash', icon: '🗑️', description: '没用的垃圾。', price: 0, sellPrice: 0 },
+  driftwood: { id: 'driftwood', name: '漂流木', type: 'trash', icon: '🪵', description: '从海里冲上来的一块木头。', price: 0, sellPrice: 0 },
+  broken_glasses: { id: 'broken_glasses', name: '破损的眼镜', type: 'trash', icon: '👓', description: '看起来像是有人弄丢了眼镜。', price: 0, sellPrice: 0 },
+  cd: { id: 'cd', name: '损坏的CD', type: 'trash', icon: '💿', description: '这是 JojaNet 2.0 试用版光盘。', price: 0, sellPrice: 0 },
+  newspaper: { id: 'newspaper', name: '湿透的报纸', type: 'trash', icon: '📰', description: '这只是一堆垃圾。', price: 0, sellPrice: 0 }
 }

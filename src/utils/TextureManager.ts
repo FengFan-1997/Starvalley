@@ -39,7 +39,20 @@ export class TextureManager {
     return PIXI.Texture.WHITE // Fallback
   }
 
+  public getDataUrl(key: string): string {
+    if (SPRITES[key]) {
+      const canvas = this.generateCanvasFromData(SPRITES[key])
+      return canvas.toDataURL()
+    }
+    return ''
+  }
+
   private generateTextureFromData(data: string[]): PIXI.Texture {
+    const canvas = this.generateCanvasFromData(data)
+    return PIXI.Texture.from(canvas)
+  }
+
+  private generateCanvasFromData(data: string[]): HTMLCanvasElement {
     const height = data.length
     const width = (data[0] ?? '').length
 
@@ -63,8 +76,7 @@ export class TextureManager {
         }
       }
     }
-
-    return PIXI.Texture.from(canvas)
+    return canvas
   }
 
   private createSolidTexture(color: number): PIXI.Texture {
