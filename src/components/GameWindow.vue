@@ -153,8 +153,8 @@ const loadGame = () => {
 
 const testShop = () => {
   gameStore.openShop([
-    { id: 'parsnip_seed', price: 20 },
-    { id: 'potato_seed', price: 50 },
+    { id: 'parsnip_seeds', price: 20 },
+    { id: 'potato_seeds', price: 50 },
     { id: 'basic_fertilizer', price: 100 }
   ])
   showMenu.value = false

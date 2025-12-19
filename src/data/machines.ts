@@ -238,9 +238,9 @@ export const MACHINE_RECIPES: MachineRecipe[] = [
   { machineId: 'preserves_jar', inputs: [{ itemId: 'blueberry', quantity: 1 }], output: { itemId: 'jelly', quantity: 1 }, processingTime: 4000 },
 
   // Seed Maker (New Crops)
-  { machineId: 'seed_maker', inputs: [{ itemId: 'strawberry', quantity: 1 }], output: { itemId: 'strawberry_seed', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'strawberry', quantity: 1 }], output: { itemId: 'strawberry_seeds', quantity: 2 }, processingTime: 20 },
   { machineId: 'seed_maker', inputs: [{ itemId: 'grape', quantity: 1 }], output: { itemId: 'grape_starter', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'blueberry', quantity: 1 }], output: { itemId: 'blueberry_seed', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'blueberry', quantity: 1 }], output: { itemId: 'blueberry_seeds', quantity: 2 }, processingTime: 20 },
 
   // --- Restored Recipes ---
   { machineId: 'preserves_jar', inputs: [{ itemId: 'melon', quantity: 1 }], output: { itemId: 'jelly', quantity: 1 }, processingTime: 4000 },
@@ -255,16 +255,16 @@ export const MACHINE_RECIPES: MachineRecipe[] = [
   { machineId: 'keg', inputs: [{ itemId: 'blackberry', quantity: 1 }], output: { itemId: 'wine', quantity: 1 }, processingTime: 10000 },
   { machineId: 'keg', inputs: [{ itemId: 'crystal_fruit', quantity: 1 }], output: { itemId: 'wine', quantity: 1 }, processingTime: 10000 },
 
-  { machineId: 'seed_maker', inputs: [{ itemId: 'parsnip', quantity: 1 }], output: { itemId: 'parsnip_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'potato', quantity: 1 }], output: { itemId: 'potato_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'cauliflower', quantity: 1 }], output: { itemId: 'cauliflower_seed', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'parsnip', quantity: 1 }], output: { itemId: 'parsnip_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'potato', quantity: 1 }], output: { itemId: 'potato_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'cauliflower', quantity: 1 }], output: { itemId: 'cauliflower_seeds', quantity: 2 }, processingTime: 20 },
   { machineId: 'seed_maker', inputs: [{ itemId: 'green_bean', quantity: 1 }], output: { itemId: 'bean_starter', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'kale', quantity: 1 }], output: { itemId: 'kale_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'wheat', quantity: 1 }], output: { itemId: 'wheat_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'tomato', quantity: 1 }], output: { itemId: 'tomato_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'corn', quantity: 1 }], output: { itemId: 'corn_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'pumpkin', quantity: 1 }], output: { itemId: 'pumpkin_seed', quantity: 2 }, processingTime: 20 },
-  { machineId: 'seed_maker', inputs: [{ itemId: 'melon', quantity: 1 }], output: { itemId: 'melon_seed', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'kale', quantity: 1 }], output: { itemId: 'kale_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'wheat', quantity: 1 }], output: { itemId: 'wheat_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'tomato', quantity: 1 }], output: { itemId: 'tomato_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'corn', quantity: 1 }], output: { itemId: 'corn_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'pumpkin', quantity: 1 }], output: { itemId: 'pumpkin_seeds', quantity: 2 }, processingTime: 20 },
+  { machineId: 'seed_maker', inputs: [{ itemId: 'melon', quantity: 1 }], output: { itemId: 'melon_seeds', quantity: 2 }, processingTime: 20 },
   { machineId: 'seed_maker', inputs: [{ itemId: 'tulip', quantity: 1 }], output: { itemId: 'tulip_bulb', quantity: 2 }, processingTime: 20 },
 
   // Recycling Machine

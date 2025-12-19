@@ -1490,7 +1490,7 @@ export const SPRITES: Record<string, string[]> = {
   ],
 
   // --- New Crops (Summer/Fall/Special) ---
-  blueberry_seed: [
+  blueberry_seeds: [
     "________________",
     "______aa________",
     "_____aaaa_______",
@@ -1599,7 +1599,7 @@ export const SPRITES: Record<string, string[]> = {
     "________________"
   ],
 
-  melon_seed: [
+  melon_seeds: [
     "________________",
     "______aa________",
     "_____aaaa_______",
@@ -2319,7 +2319,7 @@ export const SPRITES: Record<string, string[]> = {
   ],
 
   // --- More Crops ---
-  strawberry_seed: [
+  strawberry_seeds: [
     "________________",
     "______aa________",
     "_____aaaa_______",
@@ -2339,7 +2339,7 @@ export const SPRITES: Record<string, string[]> = {
   ],
   // strawberry: [ // Duplicate removed
 
-  grape_seed: [
+  grape_starter: [
     "________________",
     "______aa________",
     "_____aaaa_______",

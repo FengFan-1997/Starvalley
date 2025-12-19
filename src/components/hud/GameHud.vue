@@ -92,7 +92,7 @@
               <span class="item-quantity" v-if="tool.quantity > 1">{{ tool.quantity }}</span>
               <!-- Capacity/Durability Bar -->
               <div class="tool-bar-container" v-if="tool.data && tool.data.maxWater">
-                <div class="tool-bar-fill" :style="{ width: (tool.data.water / tool.data.maxWater * 100) + '%' }"></div>
+                <div class="tool-bar-fill" :style="{ width: ((tool.data.water ?? 0) / tool.data.maxWater * 100) + '%' }"></div>
               </div>
             </template>
           </button>

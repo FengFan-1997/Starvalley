@@ -547,10 +547,10 @@ const renderNPC = (c: NPCContainer, npc: NPC) => {
        useBase = 'char'
    }
 
-   updateCharacterSprite(c, s, useBase, npc.direction || 'down', npc.isMoving || false)
+   updateCharacterSprite(c, s, useBase, npc.facing || 'down', npc.isMoving || false)
 
    if (useBase === 'char') {
-       s.tint = npc.spriteColor || 0xFFFFFF
+       s.tint = parseInt(npc.portraitColor.replace('#', '0x')) || 0xFFFFFF
    } else {
        s.tint = 0xFFFFFF
    }
@@ -565,7 +565,7 @@ const renderNPC = (c: NPCContainer, npc: NPC) => {
    const dist = Math.abs(npc.x - player.x) + Math.abs(npc.y - player.y)
 
    // Show bubble if close and not talking
-   if (dist <= 1.5 && npc.currentDialogueIndex < npc.dialogues.length) {
+   if (dist <= 1.5 && !npc.talkedToday) {
        if (!bubble) {
            bubble = new PIXI.Sprite(TextureManager.getInstance().getTexture('emote_question'))
            bubble.name = 'bubble'
@@ -1482,47 +1482,48 @@ const lightTexture = computed(() => {
 })
 
 const updateLighting = () => {
-    if (!darknessGraphics || !lightingContainer || !app) return
+      if (!darknessGraphics || !lightingContainer || !app) return
 
-    const time = gameStore.gameState.gameTime
-    const location = gameStore.gameState.location
-    const isIndoors = !['farm', 'town', 'forest', 'mountain', 'beach'].includes(location)
-    const isMine = location.startsWith('mine')
+      const rawTime = gameStore.gameState.gameTime
+      const hour = (rawTime / 60) + 6
+      const location = gameStore.gameState.location
+      const isIndoors = !['farm', 'town', 'forest', 'mountain', 'beach'].includes(location)
+      const isMine = location.startsWith('mine')
 
-    let targetAlpha = 0
-    let targetTint = 0x000033
+      let targetAlpha = 0
+      let targetTint = 0x000033
 
-    if (isMine) {
-        targetAlpha = 0.5 + (gameStore.gameState.mineLevel * 0.005)
-        if (targetAlpha > 0.95) targetAlpha = 0.95
-        targetTint = 0x000000
-    } else if (isIndoors) {
-        targetAlpha = 0.1 // Slight ambiance
-    } else {
-        // Outdoors
-        if (time >= 6 && time < 8) { // Sunrise
-            const p = (time - 6) / 2
-            targetTint = 0xFFD700
-            targetAlpha = 0.3 * (1 - p)
-        } else if (time >= 8 && time < 17) { // Day
-            targetAlpha = 0
-        } else if (time >= 17 && time < 20) { // Sunset
-            const p = (time - 17) / 3
-            targetTint = 0xFF4500
-            targetAlpha = 0.4 * p
-        } else if (time >= 20) { // Night
-            const p = Math.min(1, (time - 20) / 2)
-            targetAlpha = 0.4 + (p * 0.4) // Max 0.8
-        } else { // Late night
-             targetAlpha = 0.8
-        }
-    }
+      if (isMine) {
+          targetAlpha = 0.5 + (gameStore.gameState.mineLevel * 0.005)
+          if (targetAlpha > 0.95) targetAlpha = 0.95
+          targetTint = 0x000000
+      } else if (isIndoors) {
+          targetAlpha = 0.1 // Slight ambiance
+      } else {
+          // Outdoors
+          if (hour >= 6 && hour < 8) { // Sunrise
+              const p = (hour - 6) / 2
+              targetTint = 0xFFD700
+              targetAlpha = 0.3 * (1 - p)
+          } else if (hour >= 8 && hour < 17) { // Day
+              targetAlpha = 0
+          } else if (hour >= 17 && hour < 20) { // Sunset
+              const p = (hour - 17) / 3
+              targetTint = 0xFF4500
+              targetAlpha = 0.4 * p
+          } else if (hour >= 20) { // Night
+              const p = Math.min(1, (hour - 20) / 2)
+              targetAlpha = 0.4 + (p * 0.4) // Max 0.8
+          } else { // Late night (should not happen with hour >= 20 logic covering till end of day)
+               targetAlpha = 0.8
+          }
+      }
 
-    // Apply Darkness
-    darknessGraphics.alpha = targetAlpha
-    darknessGraphics.tint = targetTint
-    darknessGraphics.width = 10000 // Ensure coverage
-    darknessGraphics.height = 10000
+      // Apply Darkness
+      darknessGraphics.alpha = targetAlpha
+      darknessGraphics.tint = targetTint
+      darknessGraphics.width = 10000 // Ensure coverage
+      darknessGraphics.height = 10000
     // Keep darkness static relative to screen?
     // Actually if it's huge and at 0,0 of stage (which is not moved), it works.
     // But stage moves? No, gameScene moves. app.stage doesn't move.

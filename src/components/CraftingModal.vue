@@ -77,7 +77,6 @@ import PixelButton from '@/components/ui/PixelButton.vue'
 
 const gameStore = useGameStore()
 const recipes = computed(() => gameStore.craftingRecipes)
-const inventory = computed(() => gameStore.gameState.inventory)
 const selectedRecipe = ref<CraftingRecipe | null>(null)
 
 const tabs = [

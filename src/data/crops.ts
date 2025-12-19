@@ -14,12 +14,22 @@ export interface CropDefinition {
 }
 
 export const CROPS: Record<string, CropDefinition> = {
-  // Spring Crops
+  // --- Spring Crops ---
   parsnip: {
     id: 'parsnip',
     name: '防风草',
     seedId: 'parsnip_seeds',
     harvestItemId: 'parsnip',
+    seasons: ['spring'],
+    growthStages: 4,
+    minHarvest: 1,
+    maxHarvest: 1
+  },
+  garlic: {
+    id: 'garlic',
+    name: '大蒜',
+    seedId: 'garlic_seeds',
+    harvestItemId: 'garlic',
     seasons: ['spring'],
     growthStages: 4,
     minHarvest: 1,
@@ -77,19 +87,29 @@ export const CROPS: Record<string, CropDefinition> = {
     seasons: ['spring'],
     growthStages: 8,
     regrow: 4,
+    extraYieldChance: 0.02,
+    minHarvest: 1,
+    maxHarvest: 1
+  },
+  tulip: {
+    id: 'tulip',
+    name: '郁金香',
+    seedId: 'tulip_bulb',
+    harvestItemId: 'tulip',
+    seasons: ['spring'],
+    growthStages: 6,
     minHarvest: 1,
     maxHarvest: 1
   },
 
-  // Summer Crops
-  wheat: {
-    id: 'wheat',
-    name: '小麦',
-    seedId: 'wheat_seeds',
-    harvestItemId: 'wheat',
-    seasons: ['summer', 'autumn'],
-    growthStages: 4,
-    scythe: true,
+  // --- Summer Crops ---
+  melon: {
+    id: 'melon',
+    name: '甜瓜',
+    seedId: 'melon_seeds',
+    harvestItemId: 'melon',
+    seasons: ['summer'],
+    growthStages: 12,
     minHarvest: 1,
     maxHarvest: 1
   },
@@ -115,13 +135,25 @@ export const CROPS: Record<string, CropDefinition> = {
     minHarvest: 3,
     maxHarvest: 3
   },
-  melon: {
-    id: 'melon',
-    name: '甜瓜',
-    seedId: 'melon_seeds',
-    harvestItemId: 'melon',
+  hot_pepper: {
+    id: 'hot_pepper',
+    name: '辣椒',
+    seedId: 'hot_pepper_seeds',
+    harvestItemId: 'hot_pepper',
     seasons: ['summer'],
-    growthStages: 12,
+    growthStages: 5,
+    regrow: 3,
+    minHarvest: 1,
+    maxHarvest: 1
+  },
+  wheat: {
+    id: 'wheat',
+    name: '小麦',
+    seedId: 'wheat_seeds',
+    harvestItemId: 'wheat',
+    seasons: ['summer', 'autumn'],
+    growthStages: 4,
+    scythe: true,
     minHarvest: 1,
     maxHarvest: 1
   },
@@ -137,7 +169,7 @@ export const CROPS: Record<string, CropDefinition> = {
     maxHarvest: 1
   },
 
-  // Autumn Crops
+  // --- Fall Crops ---
   pumpkin: {
     id: 'pumpkin',
     name: '南瓜',
@@ -179,5 +211,17 @@ export const CROPS: Record<string, CropDefinition> = {
     regrow: 5,
     minHarvest: 2,
     maxHarvest: 2
+  },
+  grape: {
+    id: 'grape',
+    name: '葡萄',
+    seedId: 'grape_starter',
+    harvestItemId: 'grape',
+    seasons: ['autumn'],
+    growthStages: 10,
+    regrow: 3,
+    trellis: true,
+    minHarvest: 1,
+    maxHarvest: 1
   }
 }

@@ -100,7 +100,7 @@ describe('Game Store', () => {
           const npc = store.gameState.npcs.find(n => n.id === npcId)
           if (!npc) throw new Error('NPC not found')
 
-          const initialRel = npc.relationship
+          const initialRel = npc.relationship || 0
 
           // Interact
           store.interactWithNPC(npcId)
